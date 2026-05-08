@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 export default function ComparePage() {
   const searchParams = useSearchParams()
+
   const ids = useMemo(
     () => searchParams.get('ids')?.split(',').filter(Boolean) || [],
     [searchParams]
@@ -41,17 +42,59 @@ export default function ComparePage() {
     return Number(String(value || '').replace(/[^\d.]/g, '')) || 0
   }
 
-  function getScore(property: any) {
-    return (
-      numberValue(property.slaapkamers) * 2 +
-      numberValue(property.badkamers) +
-      numberValue(property.bewoonbare_oppervlakte) / 45 +
-      (property.tuin ? 2 : 0) +
-      (property.parking ? 1.5 : 0) +
-      (property.terras ? 1 : 0) +
-      (property.lift ? 0.5 : 0) +
-      (property.dubbel_glas ? 1 : 0)
+  function formatPrice(value: any) {
+    const number = numberValue(value)
+
+    if (!number) return '-'
+
+    return new Intl.NumberFormat('nl-BE', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(number)
+  }
+
+  function scoreRuimte(property: any) {
+    const oppervlakte = numberValue(property.bewoonbare_oppervlakte)
+    const slaapkamers = numberValue(property.slaapkamers)
+    return Math.min(100, Math.round(oppervlakte / 2 + slaapkamers * 8))
+  }
+
+  function scoreComfort(property: any) {
+    return Math.min(
+      100,
+      (property.parking ? 18 : 0) +
+        (property.tuin ? 18 : 0) +
+        (property.terras ? 16 : 0) +
+        (property.lift ? 14 : 0) +
+        (property.gemeubeld ? 12 : 0) +
+        (property.dubbel_glas ? 22 : 0)
     )
+  }
+
+  function scoreVoorzieningen(property: any) {
+    return Math.min(
+      100,
+      (property.parking ? 20 : 0) +
+        (property.tuin ? 20 : 0) +
+        (property.terras ? 20 : 0) +
+        (property.lift ? 15 : 0) +
+        (property.gemeubeld ? 10 : 0) +
+        (property.dubbel_glas ? 15 : 0)
+    )
+  }
+
+  function scoreEnergie(property: any) {
+    const epc = String(property.epc || '').toUpperCase()
+
+    if (epc.includes('A')) return 95
+    if (epc.includes('B')) return 82
+    if (epc.includes('C')) return 68
+    if (epc.includes('D')) return 52
+    if (epc.includes('E')) return 38
+    if (epc.includes('F')) return 25
+
+    return property.dubbel_glas ? 70 : 50
   }
 
   const lowestPrice = properties.reduce((best, item) => {
@@ -67,9 +110,9 @@ export default function ComparePage() {
       : best
   }, null)
 
-  const mostComplete = properties.reduce((best, item) => {
+  const mostFeatures = properties.reduce((best, item) => {
     if (!best) return item
-    return getScore(item) > getScore(best) ? item : best
+    return scoreVoorzieningen(item) > scoreVoorzieningen(best) ? item : best
   }, null)
 
   if (ids.length === 0) {
@@ -77,9 +120,11 @@ export default function ComparePage() {
       <div className="min-h-screen bg-black px-5 py-10 text-white">
         <div className="mx-auto max-w-4xl rounded-3xl bg-[#111] p-8 text-center">
           <h1 className="text-3xl font-bold">Geen woningen geselecteerd</h1>
+
           <p className="mt-3 text-gray-400">
-            Selecteer eerst minimaal twee woningen om ze te vergelijken.
+            Selecteer eerst minimaal twee woningen om een vergelijking te maken.
           </p>
+
           <Link
             href="/properties"
             className="mt-6 inline-block rounded-xl bg-white px-5 py-3 font-bold text-black"
@@ -104,12 +149,18 @@ export default function ComparePage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
+            <p className="mb-3 text-sm uppercase tracking-[0.25em] text-gray-500">
+              SlimWoning
+            </p>
+
             <h1 className="text-4xl font-bold md:text-5xl">
-              Vergelijk woningen ⚖️
+              Vergelijkingsrapport
             </h1>
 
-            <p className="mt-3 text-gray-400">
-              Een overzicht van prijs, ruimte, kenmerken en voorzieningen.
+            <p className="mt-3 max-w-3xl text-gray-400">
+              Een overzichtelijke vergelijking van de geselecteerde woningen op
+              basis van prijs, ruimte, kenmerken, voorzieningen en opgegeven plus-
+              en minpunten.
             </p>
           </div>
 
@@ -117,45 +168,59 @@ export default function ComparePage() {
             href="/properties"
             className="w-fit rounded-xl bg-white px-5 py-3 font-bold text-black"
           >
-            Terug
+            Terug naar woningen
           </Link>
         </div>
 
-        <div className="mb-10 rounded-3xl border border-gray-800 bg-[#111] p-6 md:p-8">
-          <h2 className="text-3xl font-bold">
-            Woningvergelijking
-          </h2>
+        <section className="mb-10 rounded-3xl border border-gray-800 bg-[#111] p-6 md:p-8">
+          <div className="mb-6 flex flex-col gap-2">
+            <h2 className="text-3xl font-bold">Kernverschillen</h2>
 
-          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Laagste prijs</p>
-              <p className="mt-2 text-xl font-bold">
-                {lowestPrice?.title}
-              </p>
-              <p className="mt-2 text-gray-300">
-                Deze woning heeft binnen deze selectie de laagste aankoopprijs.
-              </p>
-            </div>
+            <p className="text-gray-400">
+              De onderstaande punten geven snel inzicht in de grootste verschillen
+              tussen de geselecteerde woningen.
+            </p>
+          </div>
 
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Grootste oppervlakte</p>
-              <p className="mt-2 text-xl font-bold">
-                {largestSurface?.title}
-              </p>
-              <p className="mt-2 text-gray-300">
-                Deze woning heeft de grootste opgegeven bewoonbare oppervlakte.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <InfoCard
+              label="Laagste prijs"
+              title={lowestPrice?.title}
+              text="Deze woning heeft binnen deze selectie de laagste opgegeven aankoopprijs."
+            />
 
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Meeste kenmerken</p>
-              <p className="mt-2 text-xl font-bold">
-                {mostComplete?.title}
-              </p>
-              <p className="mt-2 text-gray-300">
-                Deze woning combineert meerdere kenmerken zoals ruimte, kamers en voorzieningen.
-              </p>
-            </div>
+            <InfoCard
+              label="Grootste woonoppervlakte"
+              title={largestSurface?.title}
+              text="Deze woning heeft de grootste opgegeven bewoonbare oppervlakte."
+            />
+
+            <InfoCard
+              label="Meeste voorzieningen"
+              title={mostFeatures?.title}
+              text="Deze woning bevat de meeste aangevinkte voorzieningen in deze vergelijking."
+            />
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {properties.map((property) => (
+              <div
+                key={property.id}
+                className="rounded-2xl border border-gray-800 bg-black p-5"
+              >
+                <h3 className="text-xl font-bold">{property.title}</h3>
+
+                <div className="mt-5 space-y-4">
+                  <ScoreBar label="Ruimtescore" score={scoreRuimte(property)} />
+                  <ScoreBar label="Comfortscore" score={scoreComfort(property)} />
+                  <ScoreBar
+                    label="Voorzieningenscore"
+                    score={scoreVoorzieningen(property)}
+                  />
+                  <ScoreBar label="Energiescore" score={scoreEnergie(property)} />
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="mt-6 rounded-2xl bg-black p-6 leading-8 text-gray-300">
@@ -164,28 +229,113 @@ export default function ComparePage() {
             </h3>
 
             <p>
-              Deze vergelijking toont de belangrijkste verschillen tussen de geselecteerde woningen.
-              Daarbij wordt gekeken naar prijs, oppervlakte, aantal kamers, EPC, voorzieningen en opgegeven plus- en minpunten.
+              In deze vergelijking valt vooral het verschil op tussen prijs,
+              woonoppervlakte en voorzieningen.{' '}
+              <strong>{lowestPrice?.title}</strong> heeft de laagste opgegeven
+              aankoopprijs, terwijl <strong>{largestSurface?.title}</strong> de
+              grootste bewoonbare oppervlakte biedt.
             </p>
 
             <p className="mt-5">
-              <strong>{largestSurface?.title}</strong> heeft binnen deze selectie de meeste opgegeven woonruimte.
-              Dat kan handig zijn voor wie extra leefruimte, meerdere kamers of meer flexibiliteit zoekt.
+              De scores hierboven zijn bedoeld als visuele samenvatting van de
+              ingevoerde woningkenmerken. Ze vervangen geen volledige controle
+              van documenten, locatie, technische staat of bijkomende kosten.
             </p>
 
             <p className="mt-5">
-              <strong>{lowestPrice?.title}</strong> heeft de laagste aankoopprijs binnen deze vergelijking.
-              Dit kan interessant zijn voor kopers die vooral op budget letten of een lagere instapprijs zoeken.
+              Voor wie vooral naar ruimte kijkt, zijn bewoonbare oppervlakte,
+              slaapkamers en indeling belangrijk. Voor wie eerder naar budget
+              kijkt, spelen aankoopprijs, EPC, bouwjaar en mogelijke toekomstige
+              kosten een grotere rol.
             </p>
 
             <p className="mt-5">
-              Vergelijk naast de prijs ook zaken zoals EPC, bouwjaar, oppervlakte, buitenruimte, parking en minpunten.
-              Zo krijg je een vollediger beeld van welke woning het best aansluit bij jouw situatie.
+              Vergelijk naast de prijs ook zaken zoals EPC, bouwjaar, buitenruimte,
+              parking, minpunten en ligging. Zo krijg je een vollediger beeld van
+              welke woning het best aansluit bij jouw situatie.
             </p>
           </div>
-        </div>
+        </section>
 
-        <div className="overflow-x-auto">
+        <section className="mb-10 rounded-3xl border border-gray-800 bg-[#111] p-6 md:p-8">
+          <h2 className="mb-6 text-3xl font-bold">Vergelijkingstabel</h2>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-gray-800">
+                  <th className="p-4 text-gray-400">Kenmerk</th>
+
+                  {properties.map((property) => (
+                    <th key={property.id} className="p-4 text-white">
+                      {property.title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                <CompareRow
+                  label="Prijs"
+                  values={properties.map((p) => formatPrice(p.price))}
+                />
+
+                <CompareRow
+                  label="Stad"
+                  values={properties.map((p) => p.city || '-')}
+                />
+
+                <CompareRow
+                  label="Slaapkamers"
+                  values={properties.map((p) => p.slaapkamers || '-')}
+                />
+
+                <CompareRow
+                  label="Badkamers"
+                  values={properties.map((p) => p.badkamers || '-')}
+                />
+
+                <CompareRow
+                  label="Bewoonbare oppervlakte"
+                  values={properties.map((p) =>
+                    p.bewoonbare_oppervlakte
+                      ? `${p.bewoonbare_oppervlakte} m²`
+                      : '-'
+                  )}
+                />
+
+                <CompareRow
+                  label="Grondoppervlakte"
+                  values={properties.map((p) =>
+                    p.grondoppervlakte ? `${p.grondoppervlakte} m²` : '-'
+                  )}
+                />
+
+                <CompareRow
+                  label="Bouwjaar"
+                  values={properties.map((p) => p.bouwjaar || '-')}
+                />
+
+                <CompareRow
+                  label="EPC"
+                  values={properties.map((p) => p.epc || '-')}
+                />
+
+                <CompareRow
+                  label="Type woning"
+                  values={properties.map((p) => p.woning_type || '-')}
+                />
+
+                <CompareRow
+                  label="Verwarming"
+                  values={properties.map((p) => p.verwarmingstype || '-')}
+                />
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="overflow-x-auto">
           <div
             className="grid min-w-[900px] gap-5"
             style={{
@@ -193,58 +343,24 @@ export default function ComparePage() {
             }}
           >
             {properties.map((property) => (
-              <div
-                key={property.id}
-                className="rounded-3xl bg-[#111] p-5"
-              >
+              <div key={property.id} className="rounded-3xl bg-[#111] p-5">
                 <img
                   src={property.image}
                   alt={property.title}
                   className="h-56 w-full rounded-2xl object-cover"
                 />
 
-                <h2 className="mt-5 text-3xl font-bold">
-                  {property.title}
-                </h2>
+                <h2 className="mt-5 text-3xl font-bold">{property.title}</h2>
 
                 <p className="mt-2 text-2xl font-semibold">
-                  € {property.price}
+                  {formatPrice(property.price)}
                 </p>
 
-                <p className="text-gray-400">
-                  {property.city}
-                </p>
+                <p className="text-gray-400">{property.city}</p>
 
                 <div className="mt-6 space-y-4">
-                  {[
-                    ['Slaapkamers', property.slaapkamers || '-'],
-                    ['Badkamers', property.badkamers || '-'],
-                    ['Oppervlakte', `${property.bewoonbare_oppervlakte || '-'} m²`],
-                    ['Grondoppervlakte', `${property.grondoppervlakte || '-'} m²`],
-                    ['Bouwjaar', property.bouwjaar || '-'],
-                    ['EPC', property.epc || '-'],
-                    ['Type woning', property.woning_type || '-'],
-                    ['Verwarming', property.verwarmingstype || '-'],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-2xl bg-black p-4">
-                      <p className="text-sm text-gray-400">{label}</p>
-                      <p className="mt-1 text-lg font-bold">{value}</p>
-                    </div>
-                  ))}
-
-                  <div className="rounded-2xl bg-black p-4">
-                    <p className="text-sm text-gray-400">Pluspunten</p>
-                    <p className="mt-1 text-sm text-gray-300">
-                      {property.pluspunten || '-'}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-black p-4">
-                    <p className="text-sm text-gray-400">Minpunten</p>
-                    <p className="mt-1 text-sm text-gray-300">
-                      {property.minpunten || '-'}
-                    </p>
-                  </div>
+                  <Detail label="Pluspunten" value={property.pluspunten || '-'} />
+                  <Detail label="Minpunten" value={property.minpunten || '-'} />
 
                   <div className="rounded-2xl bg-black p-4">
                     <p className="text-sm text-gray-400">Voorzieningen</p>
@@ -256,6 +372,17 @@ export default function ComparePage() {
                       {property.lift && <Badge text="Lift" />}
                       {property.gemeubeld && <Badge text="Gemeubeld" />}
                       {property.dubbel_glas && <Badge text="Dubbel glas" />}
+
+                      {!property.parking &&
+                        !property.tuin &&
+                        !property.terras &&
+                        !property.lift &&
+                        !property.gemeubeld &&
+                        !property.dubbel_glas && (
+                          <span className="text-gray-400">
+                            Geen voorzieningen opgegeven
+                          </span>
+                        )}
                     </div>
                   </div>
 
@@ -269,8 +396,75 @@ export default function ComparePage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
+    </div>
+  )
+}
+
+function InfoCard({
+  label,
+  title,
+  text,
+}: {
+  label: string
+  title: string
+  text: string
+}) {
+  return (
+    <div className="rounded-2xl bg-black p-5">
+      <p className="text-gray-400">{label}</p>
+      <p className="mt-2 text-xl font-bold">{title || '-'}</p>
+      <p className="mt-2 text-gray-300">{text}</p>
+    </div>
+  )
+}
+
+function ScoreBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm text-gray-400">{label}</p>
+        <p className="text-sm font-bold text-white">{score}/100</p>
+      </div>
+
+      <div className="h-3 overflow-hidden rounded-full bg-[#222]">
+        <div
+          className="h-full rounded-full bg-white"
+          style={{
+            width: `${score}%`,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function CompareRow({
+  label,
+  values,
+}: {
+  label: string
+  values: string[]
+}) {
+  return (
+    <tr className="border-b border-gray-900">
+      <td className="p-4 font-bold text-gray-300">{label}</td>
+
+      {values.map((value, index) => (
+        <td key={index} className="p-4 text-gray-200">
+          {value}
+        </td>
+      ))}
+    </tr>
+  )
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-black p-4">
+      <p className="text-sm text-gray-400">{label}</p>
+      <p className="mt-1 text-sm leading-7 text-gray-300">{value}</p>
     </div>
   )
 }
