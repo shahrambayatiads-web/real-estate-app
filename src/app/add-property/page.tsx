@@ -107,7 +107,7 @@ export default function AddPropertyPage() {
         </h1>
 
         <input
-          className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          className="rounded-xl border border-gray-700 bg-[#111] p-4 text-white placeholder-gray-500 outline-none"
           placeholder="Titel"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
