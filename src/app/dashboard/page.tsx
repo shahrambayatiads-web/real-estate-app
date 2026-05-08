@@ -52,109 +52,67 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{
-        background: 'black',
-        minHeight: '100vh',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: '30px',
-      }}>
+      <div className="flex min-h-screen items-center justify-center bg-black text-3xl text-white">
         Laden...
       </div>
     )
   }
 
   return (
-    <div style={{
-      background: 'black',
-      minHeight: '100vh',
-      color: 'white',
-      padding: '40px',
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '40px',
-      }}>
+    <div className="min-h-screen bg-black px-5 py-8 text-white md:px-10">
+      <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 style={{ fontSize: '50px', marginBottom: '10px' }}>
+          <h1 className="mb-2 text-4xl font-bold md:text-5xl">
             Mijn dashboard 📊
           </h1>
 
-          <p style={{ color: '#999' }}>
+          <p className="text-sm text-gray-400 md:text-base">
             Ingelogd als: {userEmail}
           </p>
         </div>
 
-        <button onClick={handleLogout} style={{
-          padding: '12px 20px',
-          cursor: 'pointer',
-          background: 'red',
-          color: 'white',
-          border: 'none',
-          borderRadius: '10px',
-          fontWeight: 'bold',
-        }}>
+        <button
+          onClick={handleLogout}
+          className="w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white md:w-auto"
+        >
           Uitloggen
         </button>
       </div>
 
-      <div style={{ marginBottom: '30px' }}>
+      <div className="mb-8">
         <Link href="/add-property">
-          <button style={{
-            padding: '15px',
-            cursor: 'pointer',
-            borderRadius: '10px',
-            border: 'none',
-            fontWeight: 'bold',
-          }}>
+          <button className="w-full rounded-xl bg-white px-5 py-4 font-bold text-black md:w-auto">
             Woning toevoegen
           </button>
         </Link>
       </div>
 
       {properties.length === 0 ? (
-        <p style={{ color: '#999', fontSize: '20px' }}>
+        <p className="text-xl text-gray-400">
           Je hebt nog geen woningen toegevoegd.
         </p>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '20px',
-        }}>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
-            <div key={property.id} style={{
-              background: '#111',
-              padding: '20px',
-              borderRadius: '10px',
-            }}>
+            <div
+              key={property.id}
+              className="rounded-2xl bg-[#111] p-5"
+            >
               <img
                 src={property.image}
                 alt={property.title}
-                style={{
-                  width: '100%',
-                  height: '200px',
-                  objectFit: 'cover',
-                  borderRadius: '10px',
-                }}
+                className="h-52 w-full rounded-xl object-cover"
               />
 
-              <h2>{property.title}</h2>
-              <p>€ {property.price}</p>
-              <p>{property.city}</p>
+              <h2 className="mt-4 text-2xl font-bold">
+                {property.title}
+              </h2>
+
+              <p className="mt-2">€ {property.price}</p>
+              <p className="text-gray-400">{property.city}</p>
 
               <Link href={`/properties/${property.id}`}>
-                <button style={{
-                  marginTop: '10px',
-                  padding: '10px',
-                  cursor: 'pointer',
-                  borderRadius: '10px',
-                  border: 'none',
-                }}>
+                <button className="mt-4 w-full rounded-xl bg-white px-4 py-3 font-bold text-black">
                   Bekijk woning
                 </button>
               </Link>
