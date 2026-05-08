@@ -9,6 +9,8 @@ export default function PropertiesPage() {
   const router = useRouter()
 
   const [properties, setProperties] = useState<any[]>([])
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([])
+  const [userId, setUserId] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('')
@@ -27,7 +29,62 @@ export default function PropertiesPage() {
     if (!user) {
       router.push('/login')
     } else {
+      setUserId(user.id)
       setUserEmail(user.email || '')
+      getFavorites(user.id)
+    }
+  }
+
+  async function getFavorites(currentUserId: string) {
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('property_id')
+      .eq('user_id', currentUserId)
+
+    if (error) {
+      console.log(error)
+    } else {
+      setFavoriteIds(data.map((item) => Number(item.property_id)))
+    }
+  }
+
+  async function toggleFavorite(propertyId: number) {
+    if (!userId) {
+      alert('Je moet eerst inloggen')
+      return
+    }
+
+    const isFavorite = favoriteIds.includes(propertyId)
+
+    if (isFavorite) {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('property_id', propertyId)
+
+      if (error) {
+        console.log(error)
+        alert('Fout bij verwijderen uit favorieten')
+      } else {
+        setFavoriteIds(favoriteIds.filter((id) => id !== propertyId))
+      }
+    } else {
+      const { error } = await supabase
+        .from('favorites')
+        .insert([
+          {
+            user_id: userId,
+            property_id: propertyId,
+          },
+        ])
+
+      if (error) {
+        console.log(error)
+        alert('Fout bij toevoegen aan favorieten')
+      } else {
+        setFavoriteIds([...favoriteIds, propertyId])
+      }
     }
   }
 
@@ -180,47 +237,71 @@ export default function PropertiesPage() {
             gap: '20px',
           }}
         >
-          {filteredProperties.map((property) => (
-            <Link
-              href={`/properties/${property.id}`}
-              key={property.id}
-              style={{
-                textDecoration: 'none',
-                color: 'white',
-              }}
-            >
+          {filteredProperties.map((property) => {
+            const isFavorite = favoriteIds.includes(Number(property.id))
+
+            return (
               <div
+                key={property.id}
                 style={{
                   background: '#111',
                   padding: '20px',
                   borderRadius: '10px',
+                  position: 'relative',
                 }}
               >
-                <img
-                  src={property.image}
-                  alt={property.title}
+                <button
+                  onClick={() => toggleFavorite(Number(property.id))}
                   style={{
-                    width: '100%',
-                    height: '200px',
-                    objectFit: 'cover',
-                    borderRadius: '10px',
-                  }}
-                />
-
-                <h2
-                  style={{
-                    marginTop: '15px',
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    background: 'white',
+                    color: 'black',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '42px',
+                    height: '42px',
+                    cursor: 'pointer',
+                    fontSize: '22px',
                   }}
                 >
-                  {property.title}
-                </h2>
+                  {isFavorite ? '❤️' : '🤍'}
+                </button>
 
-                <p>€ {property.price}</p>
+                <Link
+                  href={`/properties/${property.id}`}
+                  style={{
+                    textDecoration: 'none',
+                    color: 'white',
+                  }}
+                >
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: '10px',
+                    }}
+                  />
 
-                <p>{property.city}</p>
+                  <h2
+                    style={{
+                      marginTop: '15px',
+                    }}
+                  >
+                    {property.title}
+                  </h2>
+
+                  <p>€ {property.price}</p>
+
+                  <p>{property.city}</p>
+                </Link>
               </div>
-            </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
