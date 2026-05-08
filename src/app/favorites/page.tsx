@@ -60,69 +60,43 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <div style={{
-        background: 'black',
-        minHeight: '100vh',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: '30px',
-      }}>
+      <div className="flex min-h-screen items-center justify-center bg-black text-3xl text-white">
         Laden...
       </div>
     )
   }
 
   return (
-    <div style={{
-      background: 'black',
-      minHeight: '100vh',
-      color: 'white',
-      padding: '40px',
-    }}>
-      <h1 style={{ fontSize: '50px', marginBottom: '40px' }}>
+    <div className="min-h-screen bg-black px-5 py-8 text-white md:px-10">
+      <h1 className="mb-10 text-4xl font-bold md:text-5xl">
         Favorieten ❤️
       </h1>
 
       {properties.length === 0 ? (
-        <p style={{ color: '#999' }}>
+        <p className="text-gray-400">
           Geen favoriete woningen.
         </p>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '20px',
-        }}>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
             <Link
               key={property.id}
               href={`/properties/${property.id}`}
-              style={{ textDecoration: 'none', color: 'white' }}
+              className="text-white no-underline"
             >
-              <div style={{
-                background: '#111',
-                padding: '20px',
-                borderRadius: '10px',
-              }}>
+              <div className="rounded-2xl bg-[#111] p-5">
                 <img
                   src={property.image}
                   alt={property.title}
-                  style={{
-                    width: '100%',
-                    height: '200px',
-                    objectFit: 'cover',
-                    borderRadius: '10px',
-                  }}
+                  className="h-52 w-full rounded-xl object-cover"
                 />
 
-                <h2 style={{ marginTop: '15px' }}>
+                <h2 className="mt-4 text-2xl font-bold">
                   {property.title}
                 </h2>
 
-                <p>€ {property.price}</p>
-                <p>{property.city}</p>
+                <p className="mt-2">€ {property.price}</p>
+                <p className="text-gray-400">{property.city}</p>
               </div>
             </Link>
           ))}
