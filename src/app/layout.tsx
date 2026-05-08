@@ -89,6 +89,16 @@ export default function RootLayout({
             </Link>
 
             <Link
+              href="/favorites"
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+              }}
+            >
+              Favorieten
+            </Link>
+
+            <Link
               href="/dashboard"
               style={{
                 color: 'white',

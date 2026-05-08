@@ -127,177 +127,87 @@ export default function PropertiesPage() {
   })
 
   return (
-    <div
-      style={{
-        background: 'black',
-        minHeight: '100vh',
-        color: 'white',
-        padding: '40px',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '40px',
-        }}
-      >
+    <div className="min-h-screen bg-black text-white px-5 py-8 md:px-10">
+      <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1
-            style={{
-              fontSize: '50px',
-              marginBottom: '10px',
-            }}
-          >
+          <h1 className="mb-2 text-4xl font-bold md:text-5xl">
             Woningen 🏠
           </h1>
 
-          <p
-            style={{
-              color: '#999',
-              fontSize: '16px',
-            }}
-          >
+          <p className="text-sm text-gray-400 md:text-base">
             Ingelogd als: {userEmail}
           </p>
         </div>
 
         <button
           onClick={handleLogout}
-          style={{
-            padding: '12px 20px',
-            background: 'white',
-            color: 'black',
-            border: 'none',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: 'bold',
-          }}
+          className="w-full rounded-xl bg-white px-5 py-3 font-bold text-black md:w-auto"
         >
           Uitloggen
         </button>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '15px',
-          marginBottom: '35px',
-        }}
-      >
+      <div className="mb-9 grid grid-cols-1 gap-4 md:grid-cols-3">
         <input
           placeholder="Zoek op titel of stad..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: '15px',
-            borderRadius: '10px',
-            border: 'none',
-            fontSize: '16px',
-          }}
+          className="rounded-xl border-0 p-4 text-black"
         />
 
         <input
           placeholder="Stad"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          style={{
-            padding: '15px',
-            borderRadius: '10px',
-            border: 'none',
-            fontSize: '16px',
-          }}
+          className="rounded-xl border-0 p-4 text-black"
         />
 
         <input
           placeholder="Maximale prijs"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          style={{
-            padding: '15px',
-            borderRadius: '10px',
-            border: 'none',
-            fontSize: '16px',
-          }}
+          className="rounded-xl border-0 p-4 text-black"
         />
       </div>
 
       {filteredProperties.length === 0 ? (
-        <p style={{ color: '#999', fontSize: '20px' }}>
+        <p className="text-xl text-gray-400">
           Geen woningen gevonden.
         </p>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-          }}
-        >
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProperties.map((property) => {
             const isFavorite = favoriteIds.includes(Number(property.id))
 
             return (
               <div
                 key={property.id}
-                style={{
-                  background: '#111',
-                  padding: '20px',
-                  borderRadius: '10px',
-                  position: 'relative',
-                }}
+                className="relative rounded-2xl bg-[#111] p-5"
               >
                 <button
                   onClick={() => toggleFavorite(Number(property.id))}
-                  style={{
-                    position: 'absolute',
-                    top: '15px',
-                    right: '15px',
-                    background: 'white',
-                    color: 'black',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '42px',
-                    height: '42px',
-                    cursor: 'pointer',
-                    fontSize: '22px',
-                  }}
+                  className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-black"
                 >
                   {isFavorite ? '❤️' : '🤍'}
                 </button>
 
                 <Link
                   href={`/properties/${property.id}`}
-                  style={{
-                    textDecoration: 'none',
-                    color: 'white',
-                  }}
+                  className="text-white no-underline"
                 >
                   <img
                     src={property.image}
                     alt={property.title}
-                    style={{
-                      width: '100%',
-                      height: '200px',
-                      objectFit: 'cover',
-                      borderRadius: '10px',
-                    }}
+                    className="h-52 w-full rounded-xl object-cover"
                   />
 
-                  <h2
-                    style={{
-                      marginTop: '15px',
-                    }}
-                  >
+                  <h2 className="mt-4 text-2xl font-bold">
                     {property.title}
                   </h2>
 
-                  <p>€ {property.price}</p>
+                  <p className="mt-2">€ {property.price}</p>
 
-                  <p>{property.city}</p>
+                  <p className="text-gray-400">{property.city}</p>
                 </Link>
               </div>
             )
