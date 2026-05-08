@@ -19,6 +19,11 @@ export default function ComparePage() {
   }, [])
 
   async function getProperties() {
+    if (ids.length === 0) {
+      setProperties([])
+      return
+    }
+
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -49,12 +54,12 @@ export default function ComparePage() {
     )
   }
 
-  const cheapest = properties.reduce((best, item) => {
+  const lowestPrice = properties.reduce((best, item) => {
     if (!best) return item
     return numberValue(item.price) < numberValue(best.price) ? item : best
   }, null)
 
-  const largest = properties.reduce((best, item) => {
+  const largestSurface = properties.reduce((best, item) => {
     if (!best) return item
     return numberValue(item.bewoonbare_oppervlakte) >
       numberValue(best.bewoonbare_oppervlakte)
@@ -62,10 +67,29 @@ export default function ComparePage() {
       : best
   }, null)
 
-  const bestOverall = properties.reduce((best, item) => {
+  const mostComplete = properties.reduce((best, item) => {
     if (!best) return item
     return getScore(item) > getScore(best) ? item : best
   }, null)
+
+  if (ids.length === 0) {
+    return (
+      <div className="min-h-screen bg-black px-5 py-10 text-white">
+        <div className="mx-auto max-w-4xl rounded-3xl bg-[#111] p-8 text-center">
+          <h1 className="text-3xl font-bold">Geen woningen geselecteerd</h1>
+          <p className="mt-3 text-gray-400">
+            Selecteer eerst minimaal twee woningen om ze te vergelijken.
+          </p>
+          <Link
+            href="/properties"
+            className="mt-6 inline-block rounded-xl bg-white px-5 py-3 font-bold text-black"
+          >
+            Naar woningen
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   if (properties.length === 0) {
     return (
@@ -85,7 +109,7 @@ export default function ComparePage() {
             </h1>
 
             <p className="mt-3 text-gray-400">
-              Een heldere vergelijking met focus op prijs, ruimte, comfort en woonkwaliteit.
+              Een overzicht van prijs, ruimte, kenmerken en voorzieningen.
             </p>
           </div>
 
@@ -99,69 +123,64 @@ export default function ComparePage() {
 
         <div className="mb-10 rounded-3xl border border-gray-800 bg-[#111] p-6 md:p-8">
           <h2 className="text-3xl font-bold">
-            SlimWoning vastgoedanalyse
+            Woningvergelijking
           </h2>
 
           <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
             <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Financieel meest toegankelijk</p>
+              <p className="text-gray-400">Laagste prijs</p>
               <p className="mt-2 text-xl font-bold">
-                {cheapest?.title}
+                {lowestPrice?.title}
               </p>
               <p className="mt-2 text-gray-300">
-                Deze woning vraagt de laagste instapprijs en is daardoor interessanter voor kopers die hun budget strak willen bewaken.
+                Deze woning heeft binnen deze selectie de laagste aankoopprijs.
               </p>
             </div>
 
             <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Sterkste woonvolume</p>
+              <p className="text-gray-400">Grootste oppervlakte</p>
               <p className="mt-2 text-xl font-bold">
-                {largest?.title}
+                {largestSurface?.title}
               </p>
               <p className="mt-2 text-gray-300">
-                Deze woning biedt de meeste bewoonbare oppervlakte en geeft daardoor meer vrijheid in dagelijks gebruik.
+                Deze woning heeft de grootste opgegeven bewoonbare oppervlakte.
               </p>
             </div>
 
             <div className="rounded-2xl bg-black p-5">
-              <p className="text-gray-400">Meest complete keuze</p>
+              <p className="text-gray-400">Meeste kenmerken</p>
               <p className="mt-2 text-xl font-bold">
-                {bestOverall?.title}
+                {mostComplete?.title}
               </p>
               <p className="mt-2 text-gray-300">
-                Op basis van ruimte, kamers en voorzieningen komt deze woning als meest evenwichtige optie naar voren.
+                Deze woning combineert meerdere kenmerken zoals ruimte, kamers en voorzieningen.
               </p>
             </div>
           </div>
 
           <div className="mt-6 rounded-2xl bg-black p-6 leading-8 text-gray-300">
             <h3 className="mb-5 text-2xl font-bold text-white">
-              Professionele aankoopanalyse
+              Samenvatting
             </h3>
 
             <p>
-              Voor kopers die vooral belang hechten aan comfort, leefruimte en toekomstgericht wonen,
-              komt <strong> {bestOverall?.title}</strong> het sterkst naar voren. De combinatie van
-              woonoppervlakte, praktische voorzieningen en dagelijkse gebruikswaarde maakt deze woning
-              bijzonder geschikt voor wie op lange termijn wil wonen.
+              Deze vergelijking toont de belangrijkste verschillen tussen de geselecteerde woningen.
+              Daarbij wordt gekeken naar prijs, oppervlakte, aantal kamers, EPC, voorzieningen en opgegeven plus- en minpunten.
             </p>
 
             <p className="mt-5">
-              <strong>{cheapest?.title}</strong> is daarentegen de meer toegankelijke keuze op financieel vlak.
-              Deze woning kan interessant zijn voor starters, alleenstaanden, koppels of investeerders die
-              vooral letten op aankoopprijs en een lagere instapdrempel.
+              <strong>{largestSurface?.title}</strong> heeft binnen deze selectie de meeste opgegeven woonruimte.
+              Dat kan handig zijn voor wie extra leefruimte, meerdere kamers of meer flexibiliteit zoekt.
             </p>
 
             <p className="mt-5">
-              Het verschil zit niet alleen in de prijs. Factoren zoals buitenruimte, aantal kamers,
-              energieprestaties, parking en toekomstige onderhoudskosten bepalen mee of een woning op termijn
-              echt de beste keuze blijft.
+              <strong>{lowestPrice?.title}</strong> heeft de laagste aankoopprijs binnen deze vergelijking.
+              Dit kan interessant zijn voor kopers die vooral op budget letten of een lagere instapprijs zoeken.
             </p>
 
             <p className="mt-5">
-              Samengevat: <strong>{bestOverall?.title}</strong> lijkt de meest complete keuze voor wooncomfort
-              en dagelijks gebruik. <strong>{cheapest?.title}</strong> blijft aantrekkelijk wanneer budget en
-              financiële flexibiliteit zwaarder doorwegen dan extra ruimte of comfort.
+              Vergelijk naast de prijs ook zaken zoals EPC, bouwjaar, oppervlakte, buitenruimte, parking en minpunten.
+              Zo krijg je een vollediger beeld van welke woning het best aansluit bij jouw situatie.
             </p>
           </div>
         </div>
