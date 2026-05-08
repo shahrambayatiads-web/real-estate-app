@@ -1,50 +1,159 @@
 'use client'
 
-"use client";
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+export default function DashboardPage() {
+  const [properties, setProperties] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default function Dashboard() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
+    checkUser()
+  }, [])
 
-      if (!data.user) {
-        router.push("/login"); // ❌ اگر لاگین نیست
-      } else {
-        setUserEmail(data.user.email);
-      }
-    };
+  async function checkUser() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    checkUser();
-  }, [router]);
+    if (!session) {
+      router.push('/login')
+      return
+    }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+    getProperties(session.user.id)
+  }
+
+  async function getProperties(userId: string) {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.log(error)
+    } else {
+      setProperties(data)
+    }
+
+    setLoading(false)
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+
+    router.push('/login')
+  }
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          background: 'black',
+          minHeight: '100vh',
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontSize: '30px',
+        }}
+      >
+        Loading...
+      </div>
+    )
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Dashboard 🚀</h1>
+    <div
+      style={{
+        background: 'black',
+        minHeight: '100vh',
+        color: 'white',
+        padding: '40px',
+      }}
+    >
+      <h1 style={{ fontSize: '50px', marginBottom: '40px' }}>
+        Dashboard 📊
+      </h1>
 
-        {userEmail && (
-          <p className="mb-6">Welcome {userEmail}</p>
-        )}
+      <div style={{ marginBottom: '30px' }}>
+        <Link href="/add-property">
+          <button
+            style={{
+              padding: '15px',
+              cursor: 'pointer',
+            }}
+          >
+            Add Property
+          </button>
+        </Link>
 
         <button
           onClick={handleLogout}
-          className="px-6 py-3 bg-white text-black rounded-xl"
+          style={{
+            padding: '15px',
+            marginLeft: '10px',
+            cursor: 'pointer',
+            background: 'red',
+            color: 'white',
+            border: 'none',
+          }}
         >
           Logout
         </button>
       </div>
-    </main>
-  );
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '20px',
+        }}
+      >
+        {properties.map((property) => (
+          <div
+            key={property.id}
+            style={{
+              background: '#111',
+              padding: '20px',
+              borderRadius: '10px',
+            }}
+          >
+            <img
+              src={property.image}
+              alt=""
+              style={{
+                width: '100%',
+                height: '200px',
+                objectFit: 'cover',
+                borderRadius: '10px',
+              }}
+            />
+
+            <h2>{property.title}</h2>
+
+            <p>{property.price} €</p>
+
+            <p>{property.city}</p>
+
+            <Link href={`/properties/${property.id}`}>
+              <button
+                style={{
+                  marginTop: '10px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                View Property
+              </button>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

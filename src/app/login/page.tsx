@@ -1,90 +1,109 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
+  const router = useRouter()
 
-  // 🔐 LOGIN
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Please fill all fields");
-      return;
-    }
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      alert(error.message);
-    } else {
-      // ❌ alert حذف شد (باعث گیر کردن می‌شد)
-      router.push("/dashboard");
-    }
-  };
-
-  // 🆕 SIGNUP
-  const handleSignup = async () => {
-    if (!email || !password) {
-      alert("Please fill all fields");
-      return;
-    }
-
+  async function handleSignup() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-    });
+    })
 
     if (error) {
-      alert(error.message);
+      alert(error.message)
     } else {
-      alert("User created ✅ Now login");
+      alert('Account created 🚀')
     }
-  };
+  }
+
+  async function handleLogin() {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      alert(error.message)
+    } else {
+      alert('Logged in ✅')
+
+      router.push('/properties')
+    }
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <div className="w-full max-w-md p-8 border border-gray-700 rounded-2xl">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Login to Fixox
+    <div
+      style={{
+        background: 'black',
+        minHeight: '100vh',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '15px',
+        }}
+      >
+        <h1 style={{ fontSize: '40px' }}>
+          Login 🔐
         </h1>
 
         <input
-          type="email"
           placeholder="Email"
-          className="w-full mb-4 p-3 bg-black border border-gray-600 rounded"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          style={{
+            padding: '15px',
+            fontSize: '16px',
+          }}
         />
 
         <input
           type="password"
           placeholder="Password"
-          className="w-full mb-6 p-3 bg-black border border-gray-600 rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          style={{
+            padding: '15px',
+            fontSize: '16px',
+          }}
         />
 
         <button
           onClick={handleLogin}
-          className="w-full py-3 bg-white text-black rounded-xl mb-3"
+          style={{
+            padding: '15px',
+            fontSize: '18px',
+            cursor: 'pointer',
+          }}
         >
           Login
         </button>
 
         <button
           onClick={handleSignup}
-          className="w-full py-3 border border-gray-600 rounded-xl"
+          style={{
+            padding: '15px',
+            fontSize: '18px',
+            cursor: 'pointer',
+          }}
         >
           Sign Up
         </button>
       </div>
-    </main>
-  );
+    </div>
+  )
 }
