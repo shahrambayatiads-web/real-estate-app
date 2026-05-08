@@ -3,7 +3,7 @@ export default function Home() {
     <>
       {/* Navbar */}
       <header className="w-full flex justify-between items-center px-8 py-4 bg-black text-white border-b border-gray-800">
-        <h2 className="text-xl font-bold">Fixox</h2>
+        <h2 className="text-xl font-bold">SlimWoning</h2>
 
         <nav className="flex gap-6">
           <a href="#" className="hover:text-gray-400">Home</a>
@@ -15,7 +15,7 @@ export default function Home() {
       {/* Hero */}
       <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white text-center px-6">
         <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-          Build your future with Fixox 🚀
+          Build your future with SlimWoning 🚀
         </h1>
 
         <p className="text-lg text-gray-400 max-w-xl">
