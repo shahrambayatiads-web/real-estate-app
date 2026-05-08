@@ -1,17 +1,6 @@
 export default function Home() {
   return (
     <>
-      {/* Navbar */}
-      <header className="w-full flex justify-between items-center px-8 py-4 bg-black text-white border-b border-gray-800">
-        <h2 className="text-xl font-bold">SlimWoning</h2>
-
-        <nav className="flex gap-6">
-          <a href="#" className="hover:text-gray-400">Home</a>
-          <a href="#" className="hover:text-gray-400">Features</a>
-          <a href="#" className="hover:text-gray-400">Pricing</a>
-        </nav>
-      </header>
-
       {/* Hero */}
       <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white text-center px-6">
         <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
@@ -36,7 +25,7 @@ export default function Home() {
       {/* Features */}
       <section className="bg-black text-white py-20 px-8">
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
-          
+
           <div className="p-6 border border-gray-800 rounded-2xl hover:border-white transition">
             <h3 className="text-xl font-semibold mb-3">⚡ Fast</h3>
             <p className="text-gray-400">
@@ -61,5 +50,5 @@ export default function Home() {
         </div>
       </section>
     </>
-  );
+  )
 }
