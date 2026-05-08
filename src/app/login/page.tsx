@@ -19,7 +19,7 @@ export default function LoginPage() {
     if (error) {
       alert(error.message)
     } else {
-      alert('Account created 🚀')
+      alert('Account aangemaakt 🚀')
     }
   }
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
     if (error) {
       alert(error.message)
     } else {
-      alert('Logged in ✅')
+      alert('Succesvol ingelogd ✅')
 
       router.push('/properties')
     }
@@ -72,11 +72,11 @@ export default function LoginPage() {
         }}
       >
         <h1 style={{ fontSize: '40px' }}>
-          Login 🔐
+          Inloggen 🔐
         </h1>
 
         <input
-          placeholder="Email"
+          placeholder="E-mailadres"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={{
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Wachtwoord"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={{
@@ -104,7 +104,7 @@ export default function LoginPage() {
             cursor: 'pointer',
           }}
         >
-          Login
+          Inloggen
         </button>
 
         <button
@@ -115,7 +115,7 @@ export default function LoginPage() {
             cursor: 'pointer',
           }}
         >
-          Sign Up
+          Registreren
         </button>
 
         <button
@@ -130,7 +130,7 @@ export default function LoginPage() {
             borderRadius: '10px',
           }}
         >
-          Continue with Google
+          Doorgaan met Google
         </button>
       </div>
     </div>

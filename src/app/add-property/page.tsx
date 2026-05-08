@@ -7,6 +7,7 @@ export default function AddPropertyPage() {
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
   const [city, setCity] = useState('')
+  const [description, setDescription] = useState('')
   const [image, setImage] = useState('')
 
   async function handleImageUpload(
@@ -24,7 +25,7 @@ export default function AddPropertyPage() {
 
     if (error) {
       console.log(error)
-      alert('Error uploading image')
+      alert('Fout bij uploaden van afbeelding')
       return
     }
 
@@ -41,7 +42,7 @@ export default function AddPropertyPage() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      alert('You must login first')
+      alert('Je moet eerst inloggen')
       return
     }
 
@@ -50,20 +51,22 @@ export default function AddPropertyPage() {
         title,
         price,
         city,
+        description,
         image,
         user_id: user.id,
       },
     ])
 
     if (error) {
-      alert('Error adding property')
+      alert('Fout bij toevoegen van woning')
       console.log(error)
     } else {
-      alert('Property added 🚀')
+      alert('Woning succesvol toegevoegd 🚀')
 
       setTitle('')
       setPrice('')
       setCity('')
+      setDescription('')
       setImage('')
     }
   }
@@ -88,28 +91,52 @@ export default function AddPropertyPage() {
         }}
       >
         <h1 style={{ fontSize: '40px' }}>
-          Add Property 🏠
+          Woning toevoegen 🏠
         </h1>
 
         <input
-          placeholder="Title"
+          placeholder="Titel"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={{ padding: '15px' }}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+          }}
         />
 
         <input
-          placeholder="Price"
+          placeholder="Prijs"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          style={{ padding: '15px' }}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+          }}
         />
 
         <input
-          placeholder="City"
+          placeholder="Stad"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          style={{ padding: '15px' }}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+          }}
+        />
+
+        <textarea
+          placeholder="Beschrijving"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            minHeight: '120px',
+          }}
         />
 
         <input
@@ -136,9 +163,12 @@ export default function AddPropertyPage() {
             padding: '15px',
             fontSize: '18px',
             cursor: 'pointer',
+            borderRadius: '10px',
+            border: 'none',
+            fontWeight: 'bold',
           }}
         >
-          Add Property
+          Woning toevoegen
         </button>
       </div>
     </div>

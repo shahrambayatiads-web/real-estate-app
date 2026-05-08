@@ -3,13 +3,40 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function PropertiesPage() {
+  const router = useRouter()
+
   const [properties, setProperties] = useState<any[]>([])
+  const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
+    checkUser()
     getProperties()
   }, [])
+
+  async function checkUser() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push('/login')
+    } else {
+      setUserEmail(user.email || '')
+    }
+  }
+
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      alert(error.message)
+    } else {
+      router.push('/login')
+    }
+  }
 
   async function getProperties() {
     const { data, error } = await supabase
@@ -32,14 +59,50 @@ export default function PropertiesPage() {
         padding: '40px',
       }}
     >
-      <h1
+      <div
         style={{
-          fontSize: '50px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           marginBottom: '40px',
         }}
       >
-        Properties 🏠
-      </h1>
+        <div>
+          <h1
+            style={{
+              fontSize: '50px',
+              marginBottom: '10px',
+            }}
+          >
+            Woningen 🏠
+          </h1>
+
+          <p
+            style={{
+              color: '#999',
+              fontSize: '16px',
+            }}
+          >
+            Ingelogd als: {userEmail}
+          </p>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '12px 20px',
+            background: 'white',
+            color: 'black',
+            border: 'none',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+          }}
+        >
+          Uitloggen
+        </button>
+      </div>
 
       <div
         style={{
@@ -66,7 +129,7 @@ export default function PropertiesPage() {
             >
               <img
                 src={property.image}
-                alt=""
+                alt={property.title}
                 style={{
                   width: '100%',
                   height: '200px',
@@ -75,9 +138,15 @@ export default function PropertiesPage() {
                 }}
               />
 
-              <h2>{property.title}</h2>
+              <h2
+                style={{
+                  marginTop: '15px',
+                }}
+              >
+                {property.title}
+              </h2>
 
-              <p>{property.price} €</p>
+              <p>€ {property.price}</p>
 
               <p>{property.city}</p>
             </div>
