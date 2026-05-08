@@ -42,7 +42,8 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://real-estate-app-two-ruby.vercel.app',
+        redirectTo:
+          'https://real-estate-app-two-ruby.vercel.app/properties',
       },
     })
 
