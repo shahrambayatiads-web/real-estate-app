@@ -23,11 +23,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const linkStyle = {
+    color: 'white',
+    textDecoration: 'none',
+    fontSize: '14px',
+  }
+
   return (
-    <html
-      lang="nl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="nl" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body
         style={{
           margin: 0,
@@ -39,9 +42,11 @@ export default function RootLayout({
         <nav
           style={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '20px 40px',
+            gap: '15px',
+            padding: '15px 20px',
             borderBottom: '1px solid #222',
             position: 'sticky',
             top: 0,
@@ -54,7 +59,7 @@ export default function RootLayout({
             style={{
               color: 'white',
               textDecoration: 'none',
-              fontSize: '28px',
+              fontSize: '22px',
               fontWeight: 'bold',
             }}
           >
@@ -64,69 +69,28 @@ export default function RootLayout({
           <div
             style={{
               display: 'flex',
-              gap: '25px',
+              gap: '14px',
               alignItems: 'center',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-end',
             }}
           >
-            <Link
-              href="/"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              Home
-            </Link>
-
-            <Link
-              href="/properties"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              Woningen
-            </Link>
-
-            <Link
-              href="/favorites"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              Favorieten
-            </Link>
-
-            <Link
-              href="/dashboard"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              href="/add-property"
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-              }}
-            >
-              Toevoegen
-            </Link>
+            <Link href="/" style={linkStyle}>Home</Link>
+            <Link href="/properties" style={linkStyle}>Woningen</Link>
+            <Link href="/favorites" style={linkStyle}>Favorieten</Link>
+            <Link href="/dashboard" style={linkStyle}>Dashboard</Link>
+            <Link href="/add-property" style={linkStyle}>Toevoegen</Link>
 
             <Link
               href="/login"
               style={{
                 color: 'black',
                 background: 'white',
-                padding: '10px 18px',
+                padding: '8px 14px',
                 borderRadius: '10px',
                 textDecoration: 'none',
                 fontWeight: 'bold',
+                fontSize: '14px',
               }}
             >
               Inloggen
