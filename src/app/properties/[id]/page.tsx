@@ -43,7 +43,7 @@ export default function PropertyDetailsPage() {
 
   async function handleDelete() {
     const confirmDelete = confirm(
-      'Are you sure you want to delete this property?'
+      'Weet je zeker dat je deze woning wilt verwijderen?'
     )
 
     if (!confirmDelete) return
@@ -54,12 +54,11 @@ export default function PropertyDetailsPage() {
       .eq('id', params.id)
 
     if (error) {
-      alert('Error deleting property')
+      alert('Fout bij verwijderen van woning')
       console.log(error)
     } else {
-      alert('Property deleted 🗑️')
-
-      router.push('/dashboard')
+      alert('Woning verwijderd 🗑️')
+      router.push('/properties')
     }
   }
 
@@ -75,7 +74,7 @@ export default function PropertyDetailsPage() {
           alignItems: 'center',
         }}
       >
-        Loading...
+        Laden...
       </div>
     )
   }
@@ -89,13 +88,25 @@ export default function PropertyDetailsPage() {
         padding: '40px',
       }}
     >
+      <Link
+        href="/properties"
+        style={{
+          color: 'white',
+          textDecoration: 'none',
+          display: 'inline-block',
+          marginBottom: '30px',
+        }}
+      >
+        ← Terug naar woningen
+      </Link>
+
       <img
         src={property.image}
-        alt=""
+        alt={property.title}
         style={{
           width: '100%',
-          maxWidth: '700px',
-          height: '400px',
+          maxWidth: '800px',
+          height: '450px',
           objectFit: 'cover',
           borderRadius: '20px',
         }}
@@ -104,26 +115,51 @@ export default function PropertyDetailsPage() {
       <h1
         style={{
           fontSize: '50px',
-          marginTop: '20px',
+          marginTop: '25px',
+          marginBottom: '10px',
         }}
       >
         {property.title}
       </h1>
 
-      <p style={{ fontSize: '30px' }}>
-        {property.price} €
+      <p style={{ fontSize: '30px', marginBottom: '10px' }}>
+        € {property.price}
       </p>
 
-      <p style={{ fontSize: '25px' }}>
+      <p style={{ fontSize: '25px', color: '#ccc' }}>
         {property.city}
       </p>
+
+      <div
+        style={{
+          marginTop: '30px',
+          maxWidth: '800px',
+          background: '#111',
+          padding: '25px',
+          borderRadius: '15px',
+        }}
+      >
+        <h2 style={{ marginBottom: '15px' }}>
+          Beschrijving
+        </h2>
+
+        <p
+          style={{
+            color: '#ccc',
+            fontSize: '18px',
+            lineHeight: '1.6',
+          }}
+        >
+          {property.description || 'Geen beschrijving beschikbaar.'}
+        </p>
+      </div>
 
       {userId === property.user_id && (
         <div
           style={{
             display: 'flex',
             gap: '10px',
-            marginTop: '20px',
+            marginTop: '25px',
           }}
         >
           <Link href={`/edit-property/${property.id}`}>
@@ -131,9 +167,11 @@ export default function PropertyDetailsPage() {
               style={{
                 padding: '15px',
                 cursor: 'pointer',
+                borderRadius: '10px',
+                border: 'none',
               }}
             >
-              Edit ✏️
+              Bewerken ✏️
             </button>
           </Link>
 
@@ -145,9 +183,10 @@ export default function PropertyDetailsPage() {
               background: 'red',
               color: 'white',
               border: 'none',
+              borderRadius: '10px',
             }}
           >
-            Delete 🗑️
+            Verwijderen 🗑️
           </button>
         </div>
       )}
