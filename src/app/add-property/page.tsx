@@ -100,7 +100,6 @@ export default function AddPropertyPage() {
       return
     }
 
-    alert('Woning succesvol toegevoegd 🚀')
     window.location.href = '/properties'
   }
 
