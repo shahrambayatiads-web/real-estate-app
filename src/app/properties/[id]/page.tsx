@@ -62,134 +62,149 @@ export default function PropertyDetailsPage() {
     }
   }
 
+  function yesNo(value: boolean | null) {
+    if (value === true) return 'Ja'
+    if (value === false) return 'Nee'
+    return 'Niet opgegeven'
+  }
+
+  function InfoRow({ label, value }: { label: string; value: any }) {
+    return (
+      <div className="flex justify-between gap-4 border-b border-gray-800 py-3">
+        <span className="text-gray-400">{label}</span>
+        <span className="text-right font-bold">
+          {value || 'Niet opgegeven'}
+        </span>
+      </div>
+    )
+  }
+
   if (!property) {
     return (
-      <div
-        style={{
-          background: 'black',
-          minHeight: '100vh',
-          color: 'white',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
+      <div className="flex min-h-screen items-center justify-center bg-black text-3xl text-white">
         Laden...
       </div>
     )
   }
 
   return (
-    <div
-      style={{
-        background: 'black',
-        minHeight: '100vh',
-        color: 'white',
-        padding: '40px',
-      }}
-    >
+    <div className="min-h-screen bg-black px-5 py-8 text-white md:px-10">
       <Link
         href="/properties"
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-          display: 'inline-block',
-          marginBottom: '30px',
-        }}
+        className="mb-8 inline-block text-white no-underline"
       >
         ← Terug naar woningen
       </Link>
 
-      <img
-        src={property.image}
-        alt={property.title}
-        style={{
-          width: '100%',
-          maxWidth: '800px',
-          height: '450px',
-          objectFit: 'cover',
-          borderRadius: '20px',
-        }}
-      />
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_0.8fr]">
+        <div>
+          <img
+            src={property.image}
+            alt={property.title}
+            className="h-72 w-full rounded-3xl object-cover md:h-[480px]"
+          />
 
-      <h1
-        style={{
-          fontSize: '50px',
-          marginTop: '25px',
-          marginBottom: '10px',
-        }}
-      >
-        {property.title}
-      </h1>
+          <div className="mt-8">
+            <h1 className="text-4xl font-bold md:text-6xl">
+              {property.title}
+            </h1>
 
-      <p style={{ fontSize: '30px', marginBottom: '10px' }}>
-        € {property.price}
-      </p>
+            <p className="mt-4 text-3xl font-bold">
+              € {property.price}
+            </p>
 
-      <p style={{ fontSize: '25px', color: '#ccc' }}>
-        {property.city}
-      </p>
+            <p className="mt-2 text-2xl text-gray-400">
+              {property.city}
+            </p>
+          </div>
 
-      <div
-        style={{
-          marginTop: '30px',
-          maxWidth: '800px',
-          background: '#111',
-          padding: '25px',
-          borderRadius: '15px',
-        }}
-      >
-        <h2 style={{ marginBottom: '15px' }}>
-          Beschrijving
-        </h2>
+          <div className="mt-8 rounded-3xl bg-[#111] p-6">
+            <h2 className="mb-4 text-2xl font-bold">
+              Beschrijving
+            </h2>
 
-        <p
-          style={{
-            color: '#ccc',
-            fontSize: '18px',
-            lineHeight: '1.6',
-          }}
-        >
-          {property.description || 'Geen beschrijving beschikbaar.'}
-        </p>
-      </div>
+            <p className="leading-8 text-gray-300">
+              {property.description || 'Geen beschrijving beschikbaar.'}
+            </p>
+          </div>
 
-      {userId === property.user_id && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            marginTop: '25px',
-          }}
-        >
-          <Link href={`/edit-property/${property.id}`}>
-            <button
-              style={{
-                padding: '15px',
-                cursor: 'pointer',
-                borderRadius: '10px',
-                border: 'none',
-              }}
-            >
-              Bewerken ✏️
-            </button>
-          </Link>
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-3xl bg-[#111] p-6">
+              <h2 className="mb-4 text-2xl font-bold">
+                Pluspunten
+              </h2>
+              <p className="leading-8 text-gray-300">
+                {property.pluspunten || 'Niet opgegeven'}
+              </p>
+            </div>
 
-          <button
-            onClick={handleDelete}
-            style={{
-              padding: '15px',
-              cursor: 'pointer',
-              background: 'red',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-            }}
-          >
-            Verwijderen 🗑️
-          </button>
+            <div className="rounded-3xl bg-[#111] p-6">
+              <h2 className="mb-4 text-2xl font-bold">
+                Minpunten
+              </h2>
+              <p className="leading-8 text-gray-300">
+                {property.minpunten || 'Niet opgegeven'}
+              </p>
+            </div>
+          </div>
         </div>
-      )}
+
+        <div className="h-fit rounded-3xl bg-[#111] p-6 lg:sticky lg:top-28">
+          <h2 className="mb-5 text-2xl font-bold">
+            Woningdetails
+          </h2>
+
+          <InfoRow label="Type woning" value={property.woning_type} />
+          <InfoRow label="Slaapkamers" value={property.slaapkamers} />
+          <InfoRow label="Badkamers" value={property.badkamers} />
+          <InfoRow
+            label="Bewoonbare oppervlakte"
+            value={
+              property.bewoonbare_oppervlakte
+                ? `${property.bewoonbare_oppervlakte} m²`
+                : ''
+            }
+          />
+          <InfoRow
+            label="Grondoppervlakte"
+            value={
+              property.grondoppervlakte
+                ? `${property.grondoppervlakte} m²`
+                : ''
+            }
+          />
+          <InfoRow label="Bouwjaar" value={property.bouwjaar} />
+          <InfoRow label="EPC" value={property.epc} />
+          <InfoRow label="Verwarmingstype" value={property.verwarmingstype} />
+          <InfoRow label="Parking" value={yesNo(property.parking)} />
+          <InfoRow label="Tuin" value={yesNo(property.tuin)} />
+          <InfoRow label="Terras" value={yesNo(property.terras)} />
+          <InfoRow label="Lift" value={yesNo(property.lift)} />
+          <InfoRow label="Gemeubeld" value={yesNo(property.gemeubeld)} />
+          <InfoRow label="Dubbel glas" value={yesNo(property.dubbel_glas)} />
+
+          <button className="mt-6 w-full rounded-2xl bg-white p-4 font-bold text-black">
+            Vergelijk slim
+          </button>
+
+          {userId === property.user_id && (
+            <div className="mt-4 grid grid-cols-1 gap-3">
+              <Link href={`/edit-property/${property.id}`}>
+                <button className="w-full rounded-2xl bg-gray-800 p-4 font-bold text-white">
+                  Bewerken ✏️
+                </button>
+              </Link>
+
+              <button
+                onClick={handleDelete}
+                className="w-full rounded-2xl bg-red-600 p-4 font-bold text-white"
+              >
+                Verwijderen 🗑️
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
