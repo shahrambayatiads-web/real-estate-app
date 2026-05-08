@@ -10,6 +10,7 @@ export default function PropertiesPage() {
 
   const [properties, setProperties] = useState<any[]>([])
   const [favoriteIds, setFavoriteIds] = useState<number[]>([])
+  const [compareIds, setCompareIds] = useState<number[]>([])
   const [userId, setUserId] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [search, setSearch] = useState('')
@@ -88,6 +89,31 @@ export default function PropertiesPage() {
     }
   }
 
+  function toggleCompare(propertyId: number) {
+    const alreadySelected = compareIds.includes(propertyId)
+
+    if (alreadySelected) {
+      setCompareIds(compareIds.filter((id) => id !== propertyId))
+      return
+    }
+
+    if (compareIds.length >= 4) {
+      alert('Je kan maximaal 4 woningen vergelijken')
+      return
+    }
+
+    setCompareIds([...compareIds, propertyId])
+  }
+
+  function goToCompare() {
+    if (compareIds.length < 2) {
+      alert('Selecteer minstens 2 woningen')
+      return
+    }
+
+    router.push(`/compare?ids=${compareIds.join(',')}`)
+  }
+
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
 
@@ -127,7 +153,7 @@ export default function PropertiesPage() {
   })
 
   return (
-    <div className="min-h-screen bg-black text-white px-5 py-8 md:px-10">
+    <div className="min-h-screen bg-black px-5 py-8 text-white md:px-10">
       <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="mb-2 text-4xl font-bold md:text-5xl">
@@ -178,12 +204,26 @@ export default function PropertiesPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProperties.map((property) => {
             const isFavorite = favoriteIds.includes(Number(property.id))
+            const isSelected = compareIds.includes(Number(property.id))
 
             return (
               <div
                 key={property.id}
-                className="relative rounded-2xl bg-[#111] p-5"
+                className={`relative rounded-2xl bg-[#111] p-5 ${
+                  isSelected ? 'ring-2 ring-green-500' : ''
+                }`}
               >
+                <button
+                  onClick={() => toggleCompare(Number(property.id))}
+                  className={`absolute left-4 top-4 z-10 rounded-xl px-3 py-2 text-sm font-bold ${
+                    isSelected
+                      ? 'bg-green-500 text-black'
+                      : 'bg-white text-black'
+                  }`}
+                >
+                  {isSelected ? 'Geselecteerd' : 'Vergelijk'}
+                </button>
+
                 <button
                   onClick={() => toggleFavorite(Number(property.id))}
                   className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl text-black"
@@ -212,6 +252,34 @@ export default function PropertiesPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {compareIds.length > 0 && (
+        <div className="fixed bottom-5 left-1/2 z-50 w-[90%] max-w-xl -translate-x-1/2 rounded-2xl bg-white p-4 text-black shadow-2xl">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <p className="font-bold">
+              {compareIds.length} woning
+              {compareIds.length > 1 ? 'en' : ''} geselecteerd
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCompareIds([])}
+                className="rounded-xl bg-gray-200 px-4 py-3 font-bold"
+              >
+                Wissen
+              </button>
+
+              <button
+                onClick={goToCompare}
+                disabled={compareIds.length < 2}
+                className="rounded-xl bg-black px-4 py-3 font-bold text-white disabled:opacity-40"
+              >
+                Vergelijk slim
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
