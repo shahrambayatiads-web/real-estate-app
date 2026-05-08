@@ -38,6 +38,19 @@ export default function LoginPage() {
     }
   }
 
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://real-estate-app-two-ruby.vercel.app',
+      },
+    })
+
+    if (error) {
+      alert(error.message)
+    }
+  }
+
   return (
     <div
       style={{
@@ -102,6 +115,21 @@ export default function LoginPage() {
           }}
         >
           Sign Up
+        </button>
+
+        <button
+          onClick={signInWithGoogle}
+          style={{
+            padding: '15px',
+            fontSize: '18px',
+            cursor: 'pointer',
+            background: 'white',
+            color: 'black',
+            border: 'none',
+            borderRadius: '10px',
+          }}
+        >
+          Continue with Google
         </button>
       </div>
     </div>
