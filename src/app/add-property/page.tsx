@@ -28,8 +28,11 @@ export default function AddPropertyPage() {
   const [gemeubeld, setGemeubeld] = useState(false)
   const [dubbelGlas, setDubbelGlas] = useState(false)
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
     const file = e.target.files?.[0]
+
     if (!file) return
 
     const fileName = `${Date.now()}-${file.name}`
@@ -98,45 +101,191 @@ export default function AddPropertyPage() {
 
   return (
     <div className="min-h-screen bg-black px-5 py-10 text-white">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4">
-        <h1 className="text-4xl font-bold">Woning toevoegen 🏠</h1>
+      <div className="mx-auto flex max-w-4xl flex-col gap-5">
+        <h1 className="text-5xl font-bold">
+          Woning toevoegen 🏠
+        </h1>
 
-        <input className="rounded-xl p-4 text-black" placeholder="Titel" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input className="rounded-xl p-4 text-black" placeholder="Prijs" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <input className="rounded-xl p-4 text-black" placeholder="Stad" value={city} onChange={(e) => setCity(e.target.value)} />
+        <input
+          className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Titel"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-        <textarea className="min-h-32 rounded-xl p-4 text-black" placeholder="Beschrijving" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <input
+          className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Prijs"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+        />
+
+        <input
+          className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Stad"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
+
+        <textarea
+          className="min-h-32 rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Beschrijving"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <input className="rounded-xl p-4 text-black" placeholder="Slaapkamers" value={slaapkamers} onChange={(e) => setSlaapkamers(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Badkamers" value={badkamers} onChange={(e) => setBadkamers(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Bewoonbare oppervlakte" value={bewoonbareOppervlakte} onChange={(e) => setBewoonbareOppervlakte(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Grondoppervlakte" value={grondoppervlakte} onChange={(e) => setGrondoppervlakte(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Bouwjaar" value={bouwjaar} onChange={(e) => setBouwjaar(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="EPC" value={epc} onChange={(e) => setEpc(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Woning type" value={woningType} onChange={(e) => setWoningType(e.target.value)} />
-          <input className="rounded-xl p-4 text-black" placeholder="Verwarmingstype" value={verwarmingstype} onChange={(e) => setVerwarmingstype(e.target.value)} />
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Aantal slaapkamers"
+            value={slaapkamers}
+            onChange={(e) => setSlaapkamers(e.target.value)}
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Aantal badkamers"
+            value={badkamers}
+            onChange={(e) => setBadkamers(e.target.value)}
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Bewoonbare oppervlakte (m²)"
+            value={bewoonbareOppervlakte}
+            onChange={(e) =>
+              setBewoonbareOppervlakte(e.target.value)
+            }
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Grondoppervlakte (m²)"
+            value={grondoppervlakte}
+            onChange={(e) =>
+              setGrondoppervlakte(e.target.value)
+            }
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Bouwjaar"
+            value={bouwjaar}
+            onChange={(e) => setBouwjaar(e.target.value)}
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="EPC-score"
+            value={epc}
+            onChange={(e) => setEpc(e.target.value)}
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Type woning"
+            value={woningType}
+            onChange={(e) => setWoningType(e.target.value)}
+          />
+
+          <input
+            className="rounded-xl bg-white p-4 text-black placeholder-gray-500"
+            placeholder="Verwarmingstype"
+            value={verwarmingstype}
+            onChange={(e) =>
+              setVerwarmingstype(e.target.value)
+            }
+          />
         </div>
 
-        <textarea className="min-h-24 rounded-xl p-4 text-black" placeholder="Pluspunten" value={pluspunten} onChange={(e) => setPluspunten(e.target.value)} />
-        <textarea className="min-h-24 rounded-xl p-4 text-black" placeholder="Minpunten" value={minpunten} onChange={(e) => setMinpunten(e.target.value)} />
+        <textarea
+          className="min-h-24 rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Pluspunten van de woning"
+          value={pluspunten}
+          onChange={(e) => setPluspunten(e.target.value)}
+        />
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <label><input type="checkbox" checked={parking} onChange={(e) => setParking(e.target.checked)} /> Parking</label>
-          <label><input type="checkbox" checked={tuin} onChange={(e) => setTuin(e.target.checked)} /> Tuin</label>
-          <label><input type="checkbox" checked={terras} onChange={(e) => setTerras(e.target.checked)} /> Terras</label>
-          <label><input type="checkbox" checked={lift} onChange={(e) => setLift(e.target.checked)} /> Lift</label>
-          <label><input type="checkbox" checked={gemeubeld} onChange={(e) => setGemeubeld(e.target.checked)} /> Gemeubeld</label>
-          <label><input type="checkbox" checked={dubbelGlas} onChange={(e) => setDubbelGlas(e.target.checked)} /> Dubbel glas</label>
+        <textarea
+          className="min-h-24 rounded-xl bg-white p-4 text-black placeholder-gray-500"
+          placeholder="Minpunten van de woning"
+          value={minpunten}
+          onChange={(e) => setMinpunten(e.target.value)}
+        />
+
+        <div className="grid grid-cols-2 gap-4 rounded-2xl bg-[#111] p-5 md:grid-cols-3">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={parking}
+              onChange={(e) => setParking(e.target.checked)}
+            />
+            Parking
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={tuin}
+              onChange={(e) => setTuin(e.target.checked)}
+            />
+            Tuin
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={terras}
+              onChange={(e) => setTerras(e.target.checked)}
+            />
+            Terras
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={lift}
+              onChange={(e) => setLift(e.target.checked)}
+            />
+            Lift
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={gemeubeld}
+              onChange={(e) => setGemeubeld(e.target.checked)}
+            />
+            Gemeubeld
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={dubbelGlas}
+              onChange={(e) => setDubbelGlas(e.target.checked)}
+            />
+            Dubbel glas
+          </label>
         </div>
 
-        <input type="file" onChange={handleImageUpload} />
+        <input
+          type="file"
+          onChange={handleImageUpload}
+          className="rounded-xl bg-[#111] p-4"
+        />
 
         {image && (
-          <img src={image} alt="" className="h-64 w-full rounded-xl object-cover" />
+          <img
+            src={image}
+            alt=""
+            className="h-72 w-full rounded-2xl object-cover"
+          />
         )}
 
-        <button onClick={handleAddProperty} className="rounded-xl bg-white p-4 font-bold text-black">
+        <button
+          onClick={handleAddProperty}
+          className="rounded-2xl bg-white p-5 text-lg font-bold text-black transition hover:scale-[1.01]"
+        >
           Woning toevoegen
         </button>
       </div>
