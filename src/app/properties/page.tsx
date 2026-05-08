@@ -10,6 +10,9 @@ export default function PropertiesPage() {
 
   const [properties, setProperties] = useState<any[]>([])
   const [userEmail, setUserEmail] = useState('')
+  const [search, setSearch] = useState('')
+  const [city, setCity] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
 
   useEffect(() => {
     checkUser()
@@ -49,6 +52,22 @@ export default function PropertiesPage() {
       setProperties(data)
     }
   }
+
+  const filteredProperties = properties.filter((property) => {
+    const matchesSearch =
+      property.title?.toLowerCase().includes(search.toLowerCase()) ||
+      property.city?.toLowerCase().includes(search.toLowerCase())
+
+    const matchesCity =
+      city === '' ||
+      property.city?.toLowerCase().includes(city.toLowerCase())
+
+    const matchesPrice =
+      maxPrice === '' ||
+      Number(property.price) <= Number(maxPrice)
+
+    return matchesSearch && matchesCity && matchesPrice
+  })
 
   return (
     <div
@@ -108,51 +127,102 @@ export default function PropertiesPage() {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '20px',
+          gap: '15px',
+          marginBottom: '35px',
         }}
       >
-        {properties.map((property) => (
-          <Link
-            href={`/properties/${property.id}`}
-            key={property.id}
-            style={{
-              textDecoration: 'none',
-              color: 'white',
-            }}
-          >
-            <div
+        <input
+          placeholder="Zoek op titel of stad..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '16px',
+          }}
+        />
+
+        <input
+          placeholder="Stad"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '16px',
+          }}
+        />
+
+        <input
+          placeholder="Maximale prijs"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          style={{
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '16px',
+          }}
+        />
+      </div>
+
+      {filteredProperties.length === 0 ? (
+        <p style={{ color: '#999', fontSize: '20px' }}>
+          Geen woningen gevonden.
+        </p>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '20px',
+          }}
+        >
+          {filteredProperties.map((property) => (
+            <Link
+              href={`/properties/${property.id}`}
+              key={property.id}
               style={{
-                background: '#111',
-                padding: '20px',
-                borderRadius: '10px',
+                textDecoration: 'none',
+                color: 'white',
               }}
             >
-              <img
-                src={property.image}
-                alt={property.title}
+              <div
                 style={{
-                  width: '100%',
-                  height: '200px',
-                  objectFit: 'cover',
+                  background: '#111',
+                  padding: '20px',
                   borderRadius: '10px',
                 }}
-              />
-
-              <h2
-                style={{
-                  marginTop: '15px',
-                }}
               >
-                {property.title}
-              </h2>
+                <img
+                  src={property.image}
+                  alt={property.title}
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '10px',
+                  }}
+                />
 
-              <p>€ {property.price}</p>
+                <h2
+                  style={{
+                    marginTop: '15px',
+                  }}
+                >
+                  {property.title}
+                </h2>
 
-              <p>{property.city}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+                <p>€ {property.price}</p>
+
+                <p>{property.city}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
