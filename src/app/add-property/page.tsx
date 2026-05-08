@@ -33,9 +33,7 @@ export default function AddPropertyPage() {
   const textareaClass =
     'min-h-28 rounded-xl border border-gray-700 bg-[#111] p-4 text-white placeholder-gray-500 outline-none'
 
-  async function handleImageUpload(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
 
     if (!file) return
@@ -47,7 +45,7 @@ export default function AddPropertyPage() {
       .upload(fileName, file)
 
     if (error) {
-      alert(error.message)
+      alert(`Upload fout: ${error.message}`)
       console.log(error)
       return
     }
@@ -97,7 +95,7 @@ export default function AddPropertyPage() {
     ])
 
     if (error) {
-      alert(error.message)
+      alert(`Database fout: ${error.message}`)
       console.log(error)
       return
     }
@@ -134,6 +132,7 @@ export default function AddPropertyPage() {
           <h1 className="text-4xl font-bold md:text-5xl">
             Woning toevoegen 🏠
           </h1>
+
           <p className="mt-3 text-gray-400">
             Vul de gegevens van de woning zo volledig mogelijk in.
           </p>
