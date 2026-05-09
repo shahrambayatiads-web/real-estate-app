@@ -39,84 +39,83 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="relative overflow-hidden px-5 py-20 md:px-10 md:py-28">
-        <div className="absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-white/10 blur-[140px]" />
+    <main className="min-h-screen bg-[#f6f8fb] text-[#111827]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#eef5ff] via-white to-[#f6f8fb] px-5 py-16 md:px-10 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+            <div>
+              <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
+                SlimWoning
+              </p>
 
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          <div>
-            <p className="mb-5 text-sm uppercase tracking-[0.35em] text-gray-500">
-              SlimWoning
-            </p>
+              <h1 className="text-5xl font-bold leading-tight md:text-7xl">
+                Zoek woningen. Vergelijk slimmer.
+              </h1>
 
-            <h1 className="text-5xl font-bold leading-tight md:text-7xl">
-              Vergelijk woningen zonder gedoe.
-            </h1>
-
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-400">
-              Verzamel woningen, vergelijk kenmerken naast elkaar en download
-              een duidelijk rapport. Alles op één plek, zonder losse notities.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link
-                href="/properties"
-                className="rounded-2xl bg-white px-7 py-4 text-center font-bold text-black transition hover:bg-gray-200"
-              >
-                Start met vergelijken
-              </Link>
-
-              <Link
-                href="/add-property"
-                className="rounded-2xl border border-gray-700 px-7 py-4 text-center font-bold text-white transition hover:bg-[#111]"
-              >
-                Woning toevoegen
-              </Link>
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600">
+                Vind woningen, bewaar favorieten en maak een duidelijk
+                vergelijkingsrapport met PDF-download.
+              </p>
             </div>
 
-            <div className="mt-8 grid max-w-xl grid-cols-3 gap-4">
-              <Stat number="PDF" label="Rapport" />
-              <Stat number="4" label="Scores" />
-              <Stat number="1" label="Overzicht" />
-            </div>
-          </div>
+            <div className="rounded-[2rem] bg-white p-5 shadow-2xl md:p-7">
+              <div className="mb-6 flex gap-6 border-b border-gray-200">
+                <button className="border-b-2 border-blue-700 pb-3 font-bold text-blue-700">
+                  Kopen
+                </button>
 
-          <div className="rounded-[2rem] border border-gray-800 bg-[#0f0f0f] p-5 shadow-2xl">
-            <div className="rounded-3xl bg-black p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">
-                    Vergelijkingsrapport
-                  </p>
+                <button className="pb-3 text-gray-500">
+                  Huren
+                </button>
 
-                  <h2 className="mt-1 text-2xl font-bold">
-                    2 woningen geselecteerd
-                  </h2>
+                <Link
+                  href="/properties"
+                  className="pb-3 font-bold text-gray-900"
+                >
+                  Vergelijken
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <input
+                  placeholder="Gemeente, postcode of buurt"
+                  className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none"
+                />
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <select className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none">
+                    <option>Type woning</option>
+                    <option>Huis</option>
+                    <option>Appartement</option>
+                    <option>Studio</option>
+                    <option>Commercieel</option>
+                  </select>
+
+                  <select className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none">
+                    <option>Maximum prijs</option>
+                    <option>€ 250.000</option>
+                    <option>€ 500.000</option>
+                    <option>€ 750.000</option>
+                    <option>€ 1.000.000</option>
+                  </select>
                 </div>
 
-                <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">
-                  PDF
-                </span>
+                <Link
+                  href="/properties"
+                  className="rounded-2xl bg-blue-700 p-4 text-center font-bold text-white transition hover:bg-blue-600"
+                >
+                  Zoek woningen
+                </Link>
               </div>
 
-              <div className="space-y-4">
-                <ReportLine label="Prijs" value="€ 365.000 vs € 598.000" />
-                <ReportLine label="Oppervlakte" value="92 m² vs 210 m²" />
-                <ReportLine label="EPC" value="B vs A+" />
-                <ReportLine label="Voorzieningen" value="Lift, terras, tuin" />
-              </div>
+              <div className="mt-5 rounded-2xl bg-[#eef5ff] p-4">
+                <p className="font-bold text-blue-800">
+                  Extra slim: vergelijk geselecteerde woningen
+                </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <MiniScore label="Ruimte" score="82" />
-                <MiniScore label="Comfort" score="76" />
-                <MiniScore label="Energie" score="88" />
-                <MiniScore label="Voorzieningen" score="71" />
-              </div>
-
-              <div className="mt-6 rounded-2xl bg-white p-4 text-black">
-                <p className="font-bold">Rapport klaar om te downloaden</p>
-                <p className="mt-1 text-sm text-gray-600">
-                  Handig om later opnieuw te bekijken of te delen.
+                <p className="mt-1 text-sm leading-6 text-gray-600">
+                  Zet woningen naast elkaar en download een overzichtelijk
+                  PDF-rapport.
                 </p>
               </div>
             </div>
@@ -124,182 +123,105 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="px-5 py-10 md:px-10">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-3">
+          <ServiceCard
+            title="Vergelijk woningen"
+            text="Bekijk prijs, oppervlakte, EPC, kamers en voorzieningen naast elkaar."
+          />
+
+          <ServiceCard
+            title="PDF rapport"
+            text="Download je vergelijking als duidelijk rapport om later te bewaren of te delen."
+          />
+
+          <ServiceCard
+            title="Favorieten"
+            text="Bewaar interessante woningen en open ze later opnieuw."
+          />
+        </div>
+      </section>
+
       {latestProperties.length > 0 && (
-        <section className="px-5 py-14 md:px-10">
+        <section className="px-5 py-10 md:px-10">
           <div className="mx-auto max-w-7xl">
-            <div className="mb-8 flex items-end justify-between gap-5">
+            <div className="mb-7 flex items-end justify-between gap-5">
               <div>
-                <p className="mb-3 text-sm uppercase tracking-[0.3em] text-gray-500">
+                <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
                   Nieuw
                 </p>
 
-                <h2 className="text-4xl font-bold md:text-5xl">
+                <h2 className="text-4xl font-bold">
                   Nieuwste woningen
                 </h2>
               </div>
 
-              <Link
-                href="/properties"
-                className="hidden text-gray-400 hover:text-white md:block"
-              >
+              <Link href="/properties" className="text-gray-500 hover:text-blue-700">
                 Alle woningen →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {latestProperties.map((property) => (
                 <Link
                   key={property.id}
                   href={`/properties/${property.id}`}
-                  className="group overflow-hidden rounded-3xl bg-[#111] transition hover:scale-[1.01]"
+                  className="overflow-hidden rounded-[2rem] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <img
                     src={property.image}
                     alt={property.title}
-                    className="h-64 w-full object-cover transition duration-500 group-hover:scale-105"
+                    className="h-64 w-full object-cover"
                   />
 
-                  <div className="p-5">
+                  <div className="p-6">
                     <h3 className="text-2xl font-bold">
                       {property.title}
                     </h3>
 
-                    <p className="mt-2 text-xl font-bold">
+                    <p className="mt-2 text-2xl font-bold text-blue-700">
                       {formatPrice(property.price)}
                     </p>
 
-                    <p className="mt-1 text-gray-400">
+                    <p className="mt-1 text-gray-500">
                       {property.city}
                     </p>
 
-                    <div className="mt-4 flex gap-3 text-sm text-gray-400">
-                      <span>{property.slaapkamers || '-'} slp.</span>
-                      <span>•</span>
-                      <span>{property.bewoonbare_oppervlakte || '-'} m²</span>
-                      <span>•</span>
-                      <span>EPC {property.epc || '-'}</span>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <Badge text={`${property.slaapkamers || '-'} slp.`} />
+                      <Badge text={`${property.bewoonbare_oppervlakte || '-'} m²`} />
+                      <Badge text={`EPC ${property.epc || '-'}`} />
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-
-            <Link
-              href="/properties"
-              className="mt-6 block rounded-2xl border border-gray-800 p-4 text-center font-bold text-white md:hidden"
-            >
-              Alle woningen bekijken
-            </Link>
           </div>
         </section>
       )}
 
-      <section className="px-5 py-10 md:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] border border-gray-800 bg-[#0f0f0f] p-5 md:p-7">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-sm text-gray-500">Zoek snel</p>
-              <p className="mt-2 text-xl font-bold">Woningen bekijken</p>
+      <section className="px-5 py-16 md:px-10">
+        <div className="mx-auto max-w-7xl rounded-[2rem] bg-[#111827] p-8 text-white md:p-14">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-center">
+            <div>
+              <h2 className="text-4xl font-bold md:text-5xl">
+                Meer overzicht. Minder twijfel.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-lg leading-8 text-gray-300">
+                Selecteer woningen, vergelijk kenmerken en download een rapport
+                dat je makkelijk kunt bewaren of bespreken.
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-sm text-gray-500">Bewaar</p>
-              <p className="mt-2 text-xl font-bold">Favorieten</p>
+            <div className="flex md:justify-end">
+              <Link
+                href="/properties"
+                className="rounded-2xl bg-white px-7 py-4 font-bold text-black"
+              >
+                Start vergelijking
+              </Link>
             </div>
-
-            <div className="rounded-2xl bg-black p-5">
-              <p className="text-sm text-gray-500">Vergelijk</p>
-              <p className="mt-2 text-xl font-bold">Kenmerken</p>
-            </div>
-
-            <Link
-              href="/properties"
-              className="flex items-center justify-center rounded-2xl bg-white p-5 text-center font-bold text-black transition hover:bg-gray-200"
-            >
-              Naar woningen →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-14 md:px-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 max-w-3xl">
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-gray-500">
-              Werkwijze
-            </p>
-
-            <h2 className="text-4xl font-bold md:text-5xl">
-              Van zoeken naar vergelijken in 3 stappen.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            <StepCard
-              number="01"
-              title="Selecteer woningen"
-              text="Kies interessante woningen en bepaal welke panden je naast elkaar wilt zetten."
-            />
-
-            <StepCard
-              number="02"
-              title="Vergelijk kenmerken"
-              text="Bekijk prijs, oppervlakte, EPC, kamers, voorzieningen en plus- en minpunten in één overzicht."
-            />
-
-            <StepCard
-              number="03"
-              title="Download rapport"
-              text="Maak een duidelijk vergelijkingsrapport dat je makkelijk kunt bewaren of delen."
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-14 md:px-10">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-3">
-          <FeatureBlock
-            title="Minder twijfel"
-            text="Door woningen gestructureerd naast elkaar te zetten zie je sneller waar de verschillen zitten."
-          />
-
-          <FeatureBlock
-            title="Alles bij elkaar"
-            text="Prijs, ruimte, EPC, voorzieningen, pluspunten en minpunten staan overzichtelijk op één plek."
-          />
-
-          <FeatureBlock
-            title="Rapport als PDF"
-            text="Download je vergelijking zodat je die later opnieuw kunt bekijken of met iemand kunt bespreken."
-          />
-        </div>
-      </section>
-
-      <section className="px-5 py-20 md:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] bg-white p-8 text-center text-black md:p-14">
-          <h2 className="text-4xl font-bold md:text-5xl">
-            Klaar om woningen overzichtelijk te vergelijken?
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-gray-600">
-            Start met woningen bekijken, selecteer je favorieten en maak een
-            duidelijk vergelijkingsrapport.
-          </p>
-
-          <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-            <Link
-              href="/properties"
-              className="rounded-2xl bg-black px-7 py-4 font-bold text-white"
-            >
-              Start met vergelijken
-            </Link>
-
-            <Link
-              href="/add-property"
-              className="rounded-2xl border border-gray-300 px-7 py-4 font-bold text-black"
-            >
-              Woning toevoegen
-            </Link>
           </div>
         </div>
       </section>
@@ -307,79 +229,7 @@ export default function Home() {
   )
 }
 
-function Stat({
-  number,
-  label,
-}: {
-  number: string
-  label: string
-}) {
-  return (
-    <div className="rounded-2xl border border-gray-800 bg-[#111] p-4">
-      <p className="text-2xl font-bold">{number}</p>
-      <p className="mt-1 text-sm text-gray-500">{label}</p>
-    </div>
-  )
-}
-
-function ReportLine({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-      <span className="text-gray-400">{label}</span>
-      <span className="font-bold">{value}</span>
-    </div>
-  )
-}
-
-function MiniScore({
-  label,
-  score,
-}: {
-  label: string
-  score: string
-}) {
-  return (
-    <div className="rounded-2xl bg-[#111] p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">{label}</p>
-        <p className="text-sm font-bold">{score}/100</p>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#222]">
-        <div
-          className="h-full rounded-full bg-white"
-          style={{ width: `${score}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function StepCard({
-  number,
-  title,
-  text,
-}: {
-  number: string
-  title: string
-  text: string
-}) {
-  return (
-    <div className="rounded-3xl border border-gray-800 bg-[#111] p-7">
-      <p className="text-sm font-bold text-gray-500">{number}</p>
-      <h3 className="mt-5 text-2xl font-bold">{title}</h3>
-      <p className="mt-3 leading-7 text-gray-400">{text}</p>
-    </div>
-  )
-}
-
-function FeatureBlock({
+function ServiceCard({
   title,
   text,
 }: {
@@ -387,9 +237,17 @@ function FeatureBlock({
   text: string
 }) {
   return (
-    <div className="rounded-3xl bg-[#111] p-8">
+    <div className="rounded-[2rem] bg-white p-8 shadow-lg">
       <h3 className="text-2xl font-bold">{title}</h3>
-      <p className="mt-4 leading-8 text-gray-400">{text}</p>
+      <p className="mt-4 leading-8 text-gray-600">{text}</p>
     </div>
+  )
+}
+
+function Badge({ text }: { text: string }) {
+  return (
+    <span className="rounded-full bg-[#eef2ff] px-4 py-2 text-sm font-semibold text-blue-700">
+      {text}
+    </span>
   )
 }
