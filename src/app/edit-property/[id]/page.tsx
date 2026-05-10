@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 export default function EditPropertyPage() {
@@ -33,9 +34,9 @@ export default function EditPropertyPage() {
   const [dubbelGlas, setDubbelGlas] = useState(false)
 
   const inputClass =
-    'rounded-xl border border-gray-700 bg-[#111] p-4 text-white placeholder-gray-500 outline-none'
+    'h-14 w-full rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 text-[15px] text-[#111827] outline-none transition placeholder:text-gray-400 focus:border-blue-600'
   const textareaClass =
-    'min-h-28 rounded-xl border border-gray-700 bg-[#111] p-4 text-white placeholder-gray-500 outline-none'
+    'min-h-32 w-full rounded-2xl border border-gray-200 bg-[#f8fafc] p-5 text-[15px] text-[#111827] outline-none transition placeholder:text-gray-400 focus:border-blue-600'
 
   useEffect(() => {
     getProperty()
@@ -66,7 +67,7 @@ export default function EditPropertyPage() {
     setGrondoppervlakte(data.grondoppervlakte || '')
     setBouwjaar(data.bouwjaar || '')
     setEpc(data.epc || '')
-    setWoningType(data.woning_type || '')
+    setWoningType(cleanWoningType(data.woning_type))
     setVerwarmingstype(data.verwarmingstype || '')
     setPluspunten(data.pluspunten || '')
     setMinpunten(data.minpunten || '')
@@ -77,6 +78,19 @@ export default function EditPropertyPage() {
     setLift(Boolean(data.lift))
     setGemeubeld(Boolean(data.gemeubeld))
     setDubbelGlas(Boolean(data.dubbel_glas))
+  }
+
+  function cleanWoningType(value: any) {
+    const text = String(value || '').trim()
+
+    if (!text) return ''
+    if (!Number.isNaN(Number(text))) return ''
+
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
+  }
+
+  function onlyNumbers(value: string) {
+    return value.replace(/[^\d]/g, '')
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -104,24 +118,44 @@ export default function EditPropertyPage() {
   }
 
   async function handleUpdateProperty() {
+    if (!title.trim()) {
+      alert('Titel is verplicht')
+      return
+    }
+
+    if (!price.trim()) {
+      alert('Prijs is verplicht')
+      return
+    }
+
+    if (!city.trim()) {
+      alert('Stad is verplicht')
+      return
+    }
+
+    if (!woningType.trim()) {
+      alert('Type woning is verplicht')
+      return
+    }
+
     const { error } = await supabase
       .from('properties')
       .update({
-        title,
-        price,
-        city,
-        description,
+        title: title.trim(),
+        price: onlyNumbers(price),
+        city: city.trim(),
+        description: description.trim(),
         image,
-        slaapkamers,
-        badkamers,
-        bewoonbare_oppervlakte: bewoonbareOppervlakte,
-        grondoppervlakte,
-        bouwjaar,
-        epc,
+        slaapkamers: onlyNumbers(slaapkamers),
+        badkamers: onlyNumbers(badkamers),
+        bewoonbare_oppervlakte: onlyNumbers(bewoonbareOppervlakte),
+        grondoppervlakte: onlyNumbers(grondoppervlakte),
+        bouwjaar: onlyNumbers(bouwjaar),
+        epc: epc.trim().toUpperCase(),
         woning_type: woningType,
-        verwarmingstype,
-        pluspunten,
-        minpunten,
+        verwarmingstype: verwarmingstype.trim(),
+        pluspunten: pluspunten.trim(),
+        minpunten: minpunten.trim(),
         parking,
         tuin,
         terras,
@@ -141,114 +175,243 @@ export default function EditPropertyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-5 py-10 text-white">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <div>
-          <h1 className="text-4xl font-bold md:text-5xl">
-            Woning bewerken ✏️
-          </h1>
+    <div className="min-h-screen bg-[#f6f8fb] px-5 py-8 text-[#111827] md:px-10">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
+              SlimWoning
+            </p>
 
-          <p className="mt-3 text-gray-400">
-            Pas de gegevens van deze woning aan.
-          </p>
+            <h1 className="text-4xl font-bold md:text-5xl">
+              Woning bewerken
+            </h1>
+
+            <p className="mt-3 text-gray-600">
+              Pas de woninggegevens aan. Stad, prijs en type woning worden nu gecontroleerd.
+            </p>
+          </div>
+
+          <Link
+            href={`/properties/${params.id}`}
+            className="w-fit rounded-2xl bg-white px-5 py-3 font-bold text-[#111827] shadow-sm"
+          >
+            Terug naar woning
+          </Link>
         </div>
 
-        <section className="rounded-3xl bg-[#0f0f0f] p-5 md:p-7">
-          <h2 className="mb-4 text-2xl font-bold">Basisinformatie</h2>
-
+        <FormSection title="Basisinformatie">
           <div className="grid grid-cols-1 gap-4">
-            <input className={inputClass} placeholder="Titel" value={title} onChange={(e) => setTitle(e.target.value)} />
-            <input className={inputClass} placeholder="Prijs" value={price} onChange={(e) => setPrice(e.target.value)} />
-            <input className={inputClass} placeholder="Stad" value={city} onChange={(e) => setCity(e.target.value)} />
-            <textarea className="min-h-36 rounded-xl border border-gray-700 bg-[#111] p-4 text-white placeholder-gray-500 outline-none" placeholder="Beschrijving" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <input
+              className={inputClass}
+              placeholder="Titel"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Prijs"
+              inputMode="numeric"
+              value={price}
+              onChange={(e) => setPrice(onlyNumbers(e.target.value))}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Stad"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+
+            <textarea
+              className={textareaClass}
+              placeholder="Beschrijving"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
-        </section>
+        </FormSection>
 
-        <section className="rounded-3xl bg-[#0f0f0f] p-5 md:p-7">
-          <h2 className="mb-4 text-2xl font-bold">Woningdetails</h2>
-
+        <FormSection title="Woningdetails">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <input className={inputClass} placeholder="Aantal slaapkamers" value={slaapkamers} onChange={(e) => setSlaapkamers(e.target.value)} />
-            <input className={inputClass} placeholder="Aantal badkamers" value={badkamers} onChange={(e) => setBadkamers(e.target.value)} />
-            <input className={inputClass} placeholder="Bewoonbare oppervlakte (m²)" value={bewoonbareOppervlakte} onChange={(e) => setBewoonbareOppervlakte(e.target.value)} />
-            <input className={inputClass} placeholder="Grondoppervlakte (m²)" value={grondoppervlakte} onChange={(e) => setGrondoppervlakte(e.target.value)} />
-            <input className={inputClass} placeholder="Bouwjaar" value={bouwjaar} onChange={(e) => setBouwjaar(e.target.value)} />
-            <input className={inputClass} placeholder="EPC-score" value={epc} onChange={(e) => setEpc(e.target.value)} />
-            <input className={inputClass} placeholder="Type woning" value={woningType} onChange={(e) => setWoningType(e.target.value)} />
-            <input className={inputClass} placeholder="Verwarmingstype" value={verwarmingstype} onChange={(e) => setVerwarmingstype(e.target.value)} />
+            <input
+              className={inputClass}
+              placeholder="Aantal slaapkamers"
+              inputMode="numeric"
+              value={slaapkamers}
+              onChange={(e) => setSlaapkamers(onlyNumbers(e.target.value))}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Aantal badkamers"
+              inputMode="numeric"
+              value={badkamers}
+              onChange={(e) => setBadkamers(onlyNumbers(e.target.value))}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Bewoonbare oppervlakte (m²)"
+              inputMode="numeric"
+              value={bewoonbareOppervlakte}
+              onChange={(e) => setBewoonbareOppervlakte(onlyNumbers(e.target.value))}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Grondoppervlakte (m²)"
+              inputMode="numeric"
+              value={grondoppervlakte}
+              onChange={(e) => setGrondoppervlakte(onlyNumbers(e.target.value))}
+            />
+
+            <input
+              className={inputClass}
+              placeholder="Bouwjaar"
+              inputMode="numeric"
+              maxLength={4}
+              value={bouwjaar}
+              onChange={(e) => setBouwjaar(onlyNumbers(e.target.value).slice(0, 4))}
+            />
+
+            <select
+              className={inputClass}
+              value={epc}
+              onChange={(e) => setEpc(e.target.value)}
+            >
+              <option value="">EPC-score</option>
+              <option value="A+">A+</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+            </select>
+
+            <select
+              className={inputClass}
+              value={woningType}
+              onChange={(e) => setWoningType(e.target.value)}
+            >
+              <option value="">Type woning</option>
+              <option value="Appartement">Appartement</option>
+              <option value="Huis">Huis</option>
+              <option value="Studio">Studio</option>
+              <option value="Commercieel">Commercieel</option>
+              <option value="Garage">Garage</option>
+              <option value="Grond">Grond</option>
+              <option value="Opbrengsteigendom">Opbrengsteigendom</option>
+              <option value="Appartementsblok">Appartementsblok</option>
+            </select>
+
+            <select
+              className={inputClass}
+              value={verwarmingstype}
+              onChange={(e) => setVerwarmingstype(e.target.value)}
+            >
+              <option value="">Verwarmingstype</option>
+              <option value="Gas">Gas</option>
+              <option value="Elektrisch">Elektrisch</option>
+              <option value="Warmtepomp">Warmtepomp</option>
+              <option value="Mazout">Mazout</option>
+              <option value="Vloerverwarming">Vloerverwarming</option>
+              <option value="Niet opgegeven">Niet opgegeven</option>
+            </select>
           </div>
-        </section>
+        </FormSection>
 
-        <section className="rounded-3xl bg-[#0f0f0f] p-5 md:p-7">
-          <h2 className="mb-4 text-2xl font-bold">Voorzieningen</h2>
-
+        <FormSection title="Voorzieningen">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={parking} onChange={(e) => setParking(e.target.checked)} />
-              Parking
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={tuin} onChange={(e) => setTuin(e.target.checked)} />
-              Tuin
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={terras} onChange={(e) => setTerras(e.target.checked)} />
-              Terras
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={lift} onChange={(e) => setLift(e.target.checked)} />
-              Lift
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={gemeubeld} onChange={(e) => setGemeubeld(e.target.checked)} />
-              Gemeubeld
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={dubbelGlas} onChange={(e) => setDubbelGlas(e.target.checked)} />
-              Dubbel glas
-            </label>
+            <CheckBox label="Parking" checked={parking} onChange={setParking} />
+            <CheckBox label="Tuin" checked={tuin} onChange={setTuin} />
+            <CheckBox label="Terras" checked={terras} onChange={setTerras} />
+            <CheckBox label="Lift" checked={lift} onChange={setLift} />
+            <CheckBox label="Gemeubeld" checked={gemeubeld} onChange={setGemeubeld} />
+            <CheckBox label="Dubbel glas" checked={dubbelGlas} onChange={setDubbelGlas} />
           </div>
-        </section>
+        </FormSection>
 
-        <section className="rounded-3xl bg-[#0f0f0f] p-5 md:p-7">
-          <h2 className="mb-4 text-2xl font-bold">Beoordeling</h2>
-
+        <FormSection title="Beoordeling">
           <div className="grid grid-cols-1 gap-4">
-            <textarea className={textareaClass} placeholder="Pluspunten van de woning" value={pluspunten} onChange={(e) => setPluspunten(e.target.value)} />
-            <textarea className={textareaClass} placeholder="Minpunten van de woning" value={minpunten} onChange={(e) => setMinpunten(e.target.value)} />
+            <textarea
+              className={textareaClass}
+              placeholder="Pluspunten van de woning"
+              value={pluspunten}
+              onChange={(e) => setPluspunten(e.target.value)}
+            />
+
+            <textarea
+              className={textareaClass}
+              placeholder="Minpunten van de woning"
+              value={minpunten}
+              onChange={(e) => setMinpunten(e.target.value)}
+            />
           </div>
-        </section>
+        </FormSection>
 
-        <section className="rounded-3xl bg-[#0f0f0f] p-5 md:p-7">
-          <h2 className="mb-4 text-2xl font-bold">Foto</h2>
-
+        <FormSection title="Foto">
           <input
             type="file"
             onChange={handleImageUpload}
-            className="w-full rounded-xl border border-gray-700 bg-[#111] p-4 text-white"
+            className="w-full rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 text-[#111827]"
           />
 
           {image && (
             <img
               src={image}
               alt=""
-              className="mt-5 h-72 w-full rounded-2xl object-cover"
+              className="mt-5 h-80 w-full rounded-[2rem] object-cover"
             />
           )}
-        </section>
+        </FormSection>
 
         <button
           onClick={handleUpdateProperty}
-          className="rounded-2xl bg-white p-5 text-lg font-bold text-black transition hover:scale-[1.01]"
+          className="rounded-2xl bg-blue-700 p-5 text-lg font-bold text-white transition hover:bg-blue-800"
         >
-          Opslaan ✅
+          Wijzigingen opslaan
         </button>
       </div>
     </div>
+  )
+}
+
+function FormSection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-[2rem] bg-white p-6 shadow-lg md:p-7">
+      <h2 className="mb-5 text-2xl font-bold">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+function CheckBox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (value: boolean) => void
+}) {
+  return (
+    <label className="flex items-center gap-3 rounded-2xl bg-[#f8fafc] p-4 font-semibold text-[#111827]">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-5 w-5"
+      />
+      {label}
+    </label>
   )
 }

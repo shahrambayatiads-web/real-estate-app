@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from '@react-google-maps/api'
 
 export default function PropertiesPage() {
   const router = useRouter()
@@ -16,6 +17,53 @@ export default function PropertiesPage() {
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  const [selectedMapProperty, setSelectedMapProperty] = useState<any>(null)
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+  })
+
+  const mapContainerStyle = {
+    width: '100%',
+    height: '320px',
+  }
+
+  function houseMarkerIcon() {
+    if (!window.google) return undefined
+
+    return {
+      path: 'M26 6 L46 23 H41 V46 H31 V34 H21 V46 H11 V23 H6 Z',
+      fillColor: '#0B1F4D',
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 3,
+      scale: 1,
+      anchor: new window.google.maps.Point(26, 46),
+    }
+  }
+
+  const propertiesWithLocation = useMemo(() => {
+    return properties.filter(
+      (property) =>
+        Number(property.latitude) &&
+        Number(property.longitude)
+    )
+  }, [properties])
+
+  const center = useMemo(() => {
+    if (propertiesWithLocation.length > 0) {
+      return {
+        lat: Number(propertiesWithLocation[0].latitude),
+        lng: Number(propertiesWithLocation[0].longitude),
+      }
+    }
+
+    return {
+      lat: 51.2194,
+      lng: 4.4025,
+    }
+  }, [propertiesWithLocation])
 
   useEffect(() => {
     checkUser()
@@ -37,53 +85,36 @@ export default function PropertiesPage() {
   }
 
   async function getFavorites(currentUserId: string) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('favorites')
       .select('property_id')
       .eq('user_id', currentUserId)
 
-    if (error) {
-      console.log(error)
-    } else {
-      setFavoriteIds(data.map((item) => Number(item.property_id)))
-    }
+    setFavoriteIds(data?.map((item) => Number(item.property_id)) || [])
   }
 
   async function toggleFavorite(propertyId: number) {
-    if (!userId) {
-      alert('Je moet eerst inloggen')
-      return
-    }
+    if (!userId) return
 
     const isFavorite = favoriteIds.includes(propertyId)
 
     if (isFavorite) {
-      const { error } = await supabase
+      await supabase
         .from('favorites')
         .delete()
         .eq('user_id', userId)
         .eq('property_id', propertyId)
 
-      if (error) {
-        console.log(error)
-        alert('Fout bij verwijderen uit favorieten')
-      } else {
-        setFavoriteIds(favoriteIds.filter((id) => id !== propertyId))
-      }
+      setFavoriteIds(favoriteIds.filter((id) => id !== propertyId))
     } else {
-      const { error } = await supabase.from('favorites').insert([
+      await supabase.from('favorites').insert([
         {
           user_id: userId,
           property_id: propertyId,
         },
       ])
 
-      if (error) {
-        console.log(error)
-        alert('Fout bij toevoegen aan favorieten')
-      } else {
-        setFavoriteIds([...favoriteIds, propertyId])
-      }
+      setFavoriteIds([...favoriteIds, propertyId])
     }
   }
 
@@ -113,26 +144,17 @@ export default function PropertiesPage() {
   }
 
   async function handleLogout() {
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-      alert(error.message)
-    } else {
-      router.push('/login')
-    }
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
   async function getProperties() {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('properties')
       .select('*')
       .order('id', { ascending: false })
 
-    if (error) {
-      console.log(error)
-    } else {
-      setProperties(data || [])
-    }
+    setProperties(data || [])
   }
 
   function numberValue(value: any) {
@@ -154,7 +176,8 @@ export default function PropertiesPage() {
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.title?.toLowerCase().includes(search.toLowerCase()) ||
-      property.city?.toLowerCase().includes(search.toLowerCase())
+      property.city?.toLowerCase().includes(search.toLowerCase()) ||
+      property.address?.toLowerCase().includes(search.toLowerCase())
 
     const matchesCity =
       city === '' ||
@@ -166,6 +189,48 @@ export default function PropertiesPage() {
 
     return matchesSearch && matchesCity && matchesPrice
   })
+
+  const filteredPropertiesWithLocation = useMemo(() => {
+    return filteredProperties.filter(
+      (property) =>
+        Number(property.latitude) &&
+        Number(property.longitude)
+    )
+  }, [filteredProperties])
+
+  const mapKey = filteredPropertiesWithLocation
+    .map((property) => `${property.id}-${property.latitude}-${property.longitude}`)
+    .join('|')
+
+  useEffect(() => {
+    if (!mapInstance || !isLoaded || filteredPropertiesWithLocation.length === 0) return
+
+    const bounds = new window.google.maps.LatLngBounds()
+
+    filteredPropertiesWithLocation.forEach((property) => {
+      bounds.extend({
+        lat: Number(property.latitude),
+        lng: Number(property.longitude),
+      })
+    })
+
+    const fitMap = () => {
+      if (filteredPropertiesWithLocation.length > 1) {
+        mapInstance.fitBounds(bounds)
+      } else {
+        mapInstance.setCenter(bounds.getCenter())
+        mapInstance.setZoom(13)
+      }
+    }
+
+    fitMap()
+
+    const timer = setTimeout(() => {
+      fitMap()
+    }, 700)
+
+    return () => clearTimeout(timer)
+  }, [mapInstance, isLoaded, mapKey])
 
   return (
     <div className="min-h-screen bg-[#f6f8fb] px-5 py-8 text-[#111827] md:px-10">
@@ -181,8 +246,7 @@ export default function PropertiesPage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-gray-600">
-              Selecteer woningen, vergelijk kenmerken en maak daarna een
-              duidelijk rapport.
+              Bekijk woningen op kaart, vergelijk kenmerken en maak een professioneel PDF rapport.
             </p>
 
             {userEmail && (
@@ -212,29 +276,116 @@ export default function PropertiesPage() {
         <div className="mb-8 rounded-[2rem] bg-white p-5 shadow-lg md:p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <input
-              placeholder="Zoek op titel of stad..."
+              placeholder="Zoek op titel, stad of adres..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-14 w-full rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 text-[15px] outline-none transition focus:border-blue-600"
+              className="h-14 rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 outline-none focus:border-blue-600"
             />
 
             <input
               placeholder="Stad"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="h-14 w-full rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 text-[15px] outline-none transition focus:border-blue-600"
+              className="h-14 rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 outline-none focus:border-blue-600"
             />
 
             <input
               placeholder="Maximale prijs"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="h-14 w-full rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 text-[15px] outline-none transition focus:border-blue-600"
+              className="h-14 rounded-2xl border border-gray-200 bg-[#f8fafc] px-5 outline-none focus:border-blue-600"
             />
 
-            <button className="flex h-14 items-center justify-center rounded-2xl bg-blue-700 px-6 font-bold text-white transition hover:bg-blue-800">
+            <button className="h-14 rounded-2xl bg-blue-700 font-bold text-white transition hover:bg-blue-800">
               Zoeken
             </button>
+          </div>
+        </div>
+
+        <div className="mb-10 overflow-hidden rounded-[2rem] bg-white shadow-xl">
+          <div className="h-[320px] w-full">
+            {!isLoaded && (
+              <div className="flex h-full items-center justify-center text-xl font-bold">
+                Kaart laden...
+              </div>
+            )}
+
+            {isLoaded && (
+              <GoogleMap
+                key={mapKey || 'empty-map'}
+                mapContainerStyle={mapContainerStyle}
+                center={center}
+                zoom={11}
+                onLoad={(map) => {
+                  setMapInstance(map)
+                }}
+                options={{
+                  fullscreenControl: true,
+                  streetViewControl: false,
+                  mapTypeControl: true,
+                }}
+                onClick={() => setSelectedMapProperty(null)}
+              >
+                {filteredPropertiesWithLocation.map((property) => (
+                  <Marker
+                    key={property.id}
+                    position={{
+                      lat: Number(property.latitude),
+                      lng: Number(property.longitude),
+                    }}
+                    icon={houseMarkerIcon()}
+                    label={{
+                      text: '⌂',
+                      color: '#ffffff',
+                      fontSize: '22px',
+                      fontWeight: '900',
+                    }}
+                    optimized={false}
+                    zIndex={999}
+                    onClick={() => setSelectedMapProperty(property)}
+                  />
+                ))}
+
+                {selectedMapProperty && (
+                  <InfoWindow
+                    position={{
+                      lat: Number(selectedMapProperty.latitude),
+                      lng: Number(selectedMapProperty.longitude),
+                    }}
+                    onCloseClick={() => setSelectedMapProperty(null)}
+                  >
+                    <div className="w-[240px] overflow-hidden rounded-2xl bg-white text-[#111827]">
+                      {selectedMapProperty.image && (
+                        <img
+                          src={selectedMapProperty.image}
+                          alt={selectedMapProperty.title}
+                          className="mb-3 h-32 w-full rounded-xl object-cover"
+                        />
+                      )}
+
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
+                        {selectedMapProperty.city || 'SlimWoning'}
+                      </p>
+
+                      <h3 className="mt-1 text-lg font-bold">
+                        {selectedMapProperty.title}
+                      </h3>
+
+                      <p className="mt-2 text-xl font-bold text-blue-700">
+                        {formatPrice(selectedMapProperty.price)}
+                      </p>
+
+                      <button
+                        onClick={() => router.push(`/properties/${selectedMapProperty.id}`)}
+                        className="mt-4 w-full rounded-xl bg-[#0B1F4D] px-4 py-3 text-sm font-bold text-white"
+                      >
+                        Bekijk woning
+                      </button>
+                    </div>
+                  </InfoWindow>
+                )}
+              </GoogleMap>
+            )}
           </div>
         </div>
 
@@ -248,112 +399,80 @@ export default function PropertiesPage() {
           </p>
         </div>
 
-        {filteredProperties.length === 0 ? (
-          <div className="rounded-[2rem] bg-white p-8 text-center shadow-lg">
-            <p className="text-xl font-bold">
-              Geen woningen gevonden.
-            </p>
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredProperties.map((property) => {
+            const isFavorite = favoriteIds.includes(Number(property.id))
+            const isSelected = compareIds.includes(Number(property.id))
 
-            <p className="mt-2 text-gray-500">
-              Pas je zoekfilters aan of voeg een nieuwe woning toe.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProperties.map((property) => {
-              const isFavorite = favoriteIds.includes(Number(property.id))
-              const isSelected = compareIds.includes(Number(property.id))
+            return (
+              <div
+                key={property.id}
+                className={`group overflow-hidden rounded-[2rem] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-2xl ${
+                  isSelected ? 'ring-2 ring-blue-700' : ''
+                }`}
+              >
+                <div className="relative overflow-hidden">
+                  <Link href={`/properties/${property.id}`}>
+                    <img
+                      src={property.image}
+                      alt={property.title}
+                      className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  </Link>
 
-              return (
-                <div
-                  key={property.id}
-                  className={`group overflow-hidden rounded-[2rem] bg-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl ${
-                    isSelected ? 'ring-2 ring-blue-700' : ''
-                  }`}
-                >
-                  <div className="relative overflow-hidden">
-                    <Link href={`/properties/${property.id}`}>
-                      <img
-                        src={property.image}
-                        alt={property.title}
-                        className="h-72 w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                    </Link>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                  <button
+                    onClick={() => toggleFavorite(Number(property.id))}
+                    className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow"
+                  >
+                    {isFavorite ? '❤️' : '🤍'}
+                  </button>
+                </div>
 
-                    <div className="absolute left-4 top-4 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-blue-700 shadow">
-                      EPC {property.epc || '-'}
-                    </div>
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold">{property.title}</h2>
 
-                    <button
-                      onClick={() => toggleFavorite(Number(property.id))}
-                      className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow transition hover:scale-105"
+                  <p className="mt-2 text-3xl font-bold text-blue-700">
+                    {formatPrice(property.price)}
+                  </p>
+
+                  <p className="mt-1 text-gray-500">
+                    {property.address
+                      ? `${property.address}, ${property.city}`
+                      : property.city}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Badge text={`${property.slaapkamers || '-'} slp.`} />
+                    <Badge text={`${property.badkamers || '-'} badk.`} />
+                    <Badge text={`${property.bewoonbare_oppervlakte || '-'} m²`} />
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <Link
+                      href={`/properties/${property.id}`}
+                      className="rounded-2xl bg-[#111827] px-4 py-3 text-center font-bold text-white"
                     >
-                      {isFavorite ? '❤️' : '🤍'}
-                    </button>
+                      Bekijk
+                    </Link>
 
                     <button
                       onClick={() => toggleCompare(Number(property.id))}
-                      className={`absolute bottom-4 left-4 rounded-2xl px-4 py-3 text-sm font-bold shadow transition hover:scale-[1.02] ${
+                      className={`rounded-2xl border px-4 py-3 font-bold ${
                         isSelected
-                          ? 'bg-blue-700 text-white'
-                          : 'bg-white text-[#111827]'
+                          ? 'border-blue-700 bg-blue-50 text-blue-700'
+                          : 'border-gray-200'
                       }`}
                     >
                       {isSelected ? 'Geselecteerd' : 'Vergelijk'}
                     </button>
                   </div>
-
-                  <div className="p-6">
-                    <Link
-                      href={`/properties/${property.id}`}
-                      className="text-[#111827]"
-                    >
-                      <h2 className="text-2xl font-bold leading-tight transition hover:text-blue-700">
-                        {property.title}
-                      </h2>
-                    </Link>
-
-                    <p className="mt-2 text-3xl font-bold text-blue-700">
-                      {formatPrice(property.price)}
-                    </p>
-
-                    <p className="mt-1 text-gray-500">
-                      {property.city}
-                    </p>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <Badge text={`${property.slaapkamers || '-'} slp.`} />
-                      <Badge text={`${property.badkamers || '-'} badk.`} />
-                      <Badge text={`${property.bewoonbare_oppervlakte || '-'} m²`} />
-                    </div>
-
-                    <div className="mt-6 grid grid-cols-2 gap-3">
-                      <Link
-                        href={`/properties/${property.id}`}
-                        className="rounded-2xl bg-[#111827] px-4 py-3 text-center font-bold text-white transition hover:bg-black"
-                      >
-                        Bekijk
-                      </Link>
-
-                      <button
-                        onClick={() => toggleCompare(Number(property.id))}
-                        className={`rounded-2xl border px-4 py-3 font-bold transition ${
-                          isSelected
-                            ? 'border-blue-700 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 text-[#111827] hover:border-blue-700'
-                        }`}
-                      >
-                        {isSelected ? 'Geselecteerd' : 'Vergelijk'}
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {compareIds.length > 0 && (

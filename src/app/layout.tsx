@@ -23,80 +23,67 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const linkStyle = {
-    color: 'white',
-    textDecoration: 'none',
-    fontSize: '14px',
-  }
-
   return (
     <html lang="nl" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body
-        style={{
-          margin: 0,
-          background: 'black',
-          color: 'white',
-          fontFamily: 'sans-serif',
-        }}
-      >
-        <nav
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '15px',
-            padding: '15px 20px',
-            borderBottom: '1px solid #222',
-            position: 'sticky',
-            top: 0,
-            background: 'black',
-            zIndex: 1000,
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '22px',
-              fontWeight: 'bold',
-            }}
-          >
-            SlimWoning 🏠
-          </Link>
+      <body className="bg-[#f6f8fb] font-sans text-[#111827]">
+        <header className="sticky top-0 z-50 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-xl">
+          <div className="mx-auto flex h-28 max-w-7xl items-center justify-between px-8">
+            <Link
+              href="/"
+              className="flex items-center transition hover:opacity-90"
+            >
+              <img
+                src="/logo.png"
+                alt="SlimWoning"
+                className="h-28 w-auto scale-125 object-contain"
+              />
+            </Link>
 
-          <div
-            style={{
-              display: 'flex',
-              gap: '14px',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              justifyContent: 'flex-end',
-            }}
-          >
-            <Link href="/" style={linkStyle}>Home</Link>
-            <Link href="/properties" style={linkStyle}>Woningen</Link>
-            <Link href="/favorites" style={linkStyle}>Favorieten</Link>
-            <Link href="/dashboard" style={linkStyle}>Dashboard</Link>
-            <Link href="/add-property" style={linkStyle}>Toevoegen</Link>
+            <nav className="hidden items-center gap-10 md:flex">
+              <Link
+                href="/"
+                className="text-[16px] font-bold text-[#0B1F4D]"
+              >
+                Home
+              </Link>
+
+              <Link
+                href="/properties"
+                className="text-[16px] font-semibold text-gray-600 transition hover:text-[#0B1F4D]"
+              >
+                Woningen
+              </Link>
+
+              <Link
+                href="/favorites"
+                className="text-[16px] font-semibold text-gray-600 transition hover:text-[#0B1F4D]"
+              >
+                Favorieten
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="text-[16px] font-semibold text-gray-600 transition hover:text-[#0B1F4D]"
+              >
+                Dashboard
+              </Link>
+
+              <Link
+                href="/add-property"
+                className="text-[16px] font-semibold text-gray-600 transition hover:text-[#0B1F4D]"
+              >
+                Toevoegen
+              </Link>
+            </nav>
 
             <Link
               href="/login"
-              style={{
-                color: 'black',
-                background: 'white',
-                padding: '8px 14px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                fontSize: '14px',
-              }}
+              className="rounded-2xl bg-[#0B1F4D] px-8 py-3 text-[15px] font-bold text-white shadow-md transition duration-200 hover:scale-[1.03] hover:bg-[#102B66]"
             >
               Inloggen
             </Link>
           </div>
-        </nav>
+        </header>
 
         <main>{children}</main>
       </body>
