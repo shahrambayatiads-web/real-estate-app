@@ -1,12 +1,26 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import jsPDF from 'jspdf'
 import { supabase } from '@/lib/supabase'
 
 export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white text-[#111827]">
+          Vergelijking laden...
+        </div>
+      }
+    >
+      <CompareContent />
+    </Suspense>
+  )
+}
+
+function CompareContent() {
   const searchParams = useSearchParams()
 
   const ids = useMemo(
@@ -21,7 +35,7 @@ export default function ComparePage() {
 
   useEffect(() => {
     getProperties()
-  }, [])
+  }, [ids.join(',')])
 
   useEffect(() => {
     if (properties.length > 0) {
@@ -379,7 +393,7 @@ export default function ComparePage() {
       const lines = [
         `Prijs: ${formatPrice(property.price)}`,
         `Adres: ${property.address || '-'}, ${property.city || '-'}`,
-        `Prijs per m²: ${pricePerM2(property) ? `€ ${pricePerM2(property)}` : '-'}`,
+        `Prijs per m²: ${pricePerM2(property) ? `± € ${pricePerM2(property)} op basis van vraagprijs` : '-'}`,
         `Slaapkamers: ${property.slaapkamers || '-'}`,
         `Badkamers: ${property.badkamers || '-'}`,
         `Oppervlakte: ${property.bewoonbare_oppervlakte || '-'} m²`,
@@ -405,6 +419,33 @@ export default function ComparePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white text-[#111827]">
         Laden...
+      </div>
+    )
+  }
+
+  if (!loading && properties.length === 0) {
+    return (
+      <div className="min-h-screen bg-white px-5 py-16 text-[#111827] md:px-10">
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-black uppercase tracking-[0.25em] text-blue-700">
+            Geen woningen geselecteerd
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-[-0.03em] text-[#0B1F4D]">
+            Selecteer eerst woningen om te vergelijken.
+          </h1>
+
+          <p className="mt-4 text-gray-600">
+            Ga terug naar woningen, kies minimaal twee woningen en klik daarna opnieuw op vergelijken.
+          </p>
+
+          <Link
+            href="/properties"
+            className="mt-8 inline-flex rounded-2xl bg-blue-700 px-6 py-4 font-bold text-white transition hover:bg-blue-800"
+          >
+            Terug naar woningen
+          </Link>
+        </div>
       </div>
     )
   }
@@ -552,9 +593,10 @@ export default function ComparePage() {
                     label="Prijs per m²"
                     value={
                       pricePerM2(property)
-                        ? `€ ${pricePerM2(property)}`
+                        ? `± € ${pricePerM2(property)}`
                         : '-'
                     }
+                    note={pricePerM2(property) ? 'Op basis van vraagprijs' : undefined}
                   />
                   <Stat
                     label="Ruimte"
@@ -694,9 +736,11 @@ function ScoreBar({
 function Stat({
   label,
   value,
+  note,
 }: {
   label: string
   value: string
+  note?: string
 }) {
   return (
     <div
@@ -705,6 +749,7 @@ function Stat({
     >
       <p className="text-sm text-gray-500">{label}</p>
       <p className="mt-2 text-xl font-bold text-[#111827]">{value}</p>
+      {note && <p className="mt-1 text-xs font-semibold text-gray-500">{note}</p>}
     </div>
   )
 }

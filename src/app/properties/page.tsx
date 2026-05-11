@@ -76,12 +76,14 @@ export default function PropertiesPage() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      router.push('/login')
-    } else {
-      setUserId(user.id)
-      setUserEmail(user.email || '')
-      getFavorites(user.id)
+      setUserId('')
+      setUserEmail('')
+      return
     }
+
+    setUserId(user.id)
+    setUserEmail(user.email || '')
+    getFavorites(user.id)
   }
 
   async function getFavorites(currentUserId: string) {
@@ -94,7 +96,10 @@ export default function PropertiesPage() {
   }
 
   async function toggleFavorite(propertyId: number) {
-    if (!userId) return
+    if (!userId) {
+      router.push('/login')
+      return
+    }
 
     const isFavorite = favoriteIds.includes(propertyId)
 
@@ -140,7 +145,11 @@ export default function PropertiesPage() {
       return
     }
 
-    router.push(`/compare?ids=${compareIds.join(',')}`)
+    const params = new URLSearchParams({
+      ids: compareIds.join(','),
+    })
+
+    router.push(`/compare?${params.toString()}`)
   }
 
   async function handleLogout() {
@@ -171,6 +180,23 @@ export default function PropertiesPage() {
       currency: 'EUR',
       maximumFractionDigits: 0,
     }).format(number)
+  }
+
+  function formatPricePerM2(property: any) {
+    const price = numberValue(property.price)
+    const area = numberValue(
+      property.bewoonbare_oppervlakte ||
+        property.oppervlakte ||
+        property.living_area
+    )
+
+    if (!price || !area) return null
+
+    return `± ${new Intl.NumberFormat('nl-BE', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(price / area)} / m²`
   }
 
   const filteredProperties = properties.filter((property) => {
@@ -436,6 +462,15 @@ export default function PropertiesPage() {
                   <p className="mt-2 text-3xl font-bold text-blue-700">
                     {formatPrice(property.price)}
                   </p>
+
+                  {formatPricePerM2(property) && (
+                    <div className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
+                      <span>{formatPricePerM2(property)}</span>
+                      <span className="text-xs font-semibold text-gray-500">
+                        op basis van vraagprijs
+                      </span>
+                    </div>
+                  )}
 
                   <p className="mt-1 text-gray-500">
                     {property.address

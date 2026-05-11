@@ -2,252 +2,636 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-export default function Home() {
-  const [latestProperties, setLatestProperties] = useState<any[]>([])
+type LocationSuggestion = {
+  id: string
+  label: string
+}
+
+const propertyTypesWithoutBedrooms = ['Grond', 'Handelszaak', 'Kot', 'Garage']
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+type Property = {
+  id: string
+  title?: string
+  city?: string
+  price?: number
+  image_url?: string
+  image?: string
+  photo_url?: string
+  main_image?: string
+  images?: string[]
+  created_at?: string
+}
+
+const belgiumPostcodes: LocationSuggestion[] = [
+  { id: '1930-zaventem', label: '1930 Zaventem' },
+  { id: '1930-nossegem', label: '1930 Nossegem' },
+  { id: '1933-sterrebeek', label: '1933 Sterrebeek' },
+  { id: '1000-brussel', label: '1000 Brussel' },
+  { id: '2000-antwerpen', label: '2000 Antwerpen' },
+  { id: '9000-gent', label: '9000 Gent' },
+]
+
+export default function HomePage() {
+  const [locationQuery, setLocationQuery] = useState('')
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
+  const [bedrooms, setBedrooms] = useState(0)
+  const [propertyType, setPropertyType] = useState('')
+  const [minPrice, setMinPrice] = useState('0')
+  const [maxPrice, setMaxPrice] = useState('0')
+  const bedroomsDisabled = propertyTypesWithoutBedrooms.includes(propertyType)
+  const [latestProperties, setLatestProperties] = useState<Property[]>([])
+  const [questionSent, setQuestionSent] = useState(false)
 
   useEffect(() => {
-    getLatestProperties()
+    async function loadLatestProperties() {
+      try {
+        const { data } = await supabase
+          .from('properties')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(6)
+
+        if (data) {
+          setLatestProperties(data)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    loadLatestProperties()
   }, [])
 
-  async function getLatestProperties() {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .order('id', { ascending: false })
-      .limit(3)
-
-    if (error) {
-      console.log(error)
+  async function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert('Locatie wordt niet ondersteund door deze browser.')
       return
     }
 
-    setLatestProperties(data || [])
+    setLocationLoading(true)
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords
+
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+          )
+
+          const data = await response.json()
+          const postcode = data.address?.postcode
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.municipality ||
+            data.address?.county
+
+          const label = [postcode, city].filter(Boolean).join(' ')
+
+          if (label) {
+            setLocationQuery(label)
+            setShowLocationSuggestions(false)
+          } else {
+            alert('Locatie gevonden, maar gemeente kon niet worden bepaald.')
+          }
+        } catch (error) {
+          console.log(error)
+          alert('Locatie kon niet worden opgehaald.')
+        } finally {
+          setLocationLoading(false)
+        }
+      },
+      () => {
+        setLocationLoading(false)
+        alert('Locatietoegang geweigerd.')
+      }
+    )
   }
 
-  function formatPrice(value: any) {
-    const number = Number(String(value || '').replace(/[^\d.]/g, '')) || 0
+  useEffect(() => {
+    const query = locationQuery.trim()
 
-    if (!number) return '-'
+    if (query.length < 2) {
+      setLocationSuggestions([])
+      setShowLocationSuggestions(false)
+      return
+    }
 
-    return new Intl.NumberFormat('nl-BE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(number)
-  }
+    const localSuggestions = belgiumPostcodes.filter((item) =>
+      item.label.toLowerCase().includes(query.toLowerCase())
+    )
+
+    if (localSuggestions.length > 0) {
+      setLocationSuggestions(localSuggestions)
+      setShowLocationSuggestions(true)
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      try {
+        setLocationLoading(true)
+
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&countrycodes=be&addressdetails=1&limit=6&q=${encodeURIComponent(query)}`
+        )
+
+        const data = await response.json()
+
+        const suggestions = data
+          .map((item: any) => {
+            const postcode = item.address?.postcode
+            const city =
+              item.address?.city ||
+              item.address?.town ||
+              item.address?.village ||
+              item.address?.municipality ||
+              item.address?.county
+
+            if (!city && !postcode) return null
+
+            return {
+              id: String(item.place_id),
+              label: [postcode, city].filter(Boolean).join(' '),
+            }
+          })
+          .filter(Boolean)
+          .filter(
+            (item: LocationSuggestion, index: number, list: LocationSuggestion[]) =>
+              list.findIndex((other) => other.label === item.label) === index
+          )
+
+        setLocationSuggestions(suggestions)
+        setShowLocationSuggestions(suggestions.length > 0)
+      } catch (error) {
+        console.log(error)
+        setLocationSuggestions([])
+        setShowLocationSuggestions(false)
+      } finally {
+        setLocationLoading(false)
+      }
+    }, 350)
+
+    return () => clearTimeout(timeout)
+  }, [locationQuery])
 
   return (
-    <main className="min-h-screen bg-[#f6f8fb] text-[#111827]">
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#eef5ff] via-white to-[#f6f8fb] px-5 py-16 md:px-10 md:py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-            <div>
-              <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
-                SlimWoning
-              </p>
+    <main className="min-h-screen overflow-hidden bg-[#f5f7fb] text-[#111827]">
+      <style>{`
+        @keyframes pulsePlay {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
 
-              <h1 className="text-5xl font-bold leading-tight md:text-7xl">
-                Zoek woningen. Vergelijk slimmer.
-              </h1>
+        @keyframes progressMove {
+          0% { width: 20%; }
+          50% { width: 70%; }
+          100% { width: 92%; }
+        }
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-                Vind woningen, bewaar favorieten en maak een duidelijk
-                vergelijkingsrapport met PDF-download.
-              </p>
+        @keyframes glowCard {
+          0%,100% { box-shadow: 0 0 0 rgba(37,99,235,0.15); }
+          50% { box-shadow: 0 18px 40px rgba(37,99,235,0.28); }
+        }
+
+        .demo-play {
+          animation: pulsePlay 2s ease-in-out infinite;
+        }
+
+        .demo-progress {
+          animation: progressMove 5s ease-in-out infinite;
+        }
+
+        .demo-glow {
+          animation: glowCard 3s ease-in-out infinite;
+        }
+      `}</style>
+      <section className="relative px-5 py-6 md:px-10 md:py-8">
+        <div className="absolute left-[-12rem] top-[-8rem] h-[30rem] w-[30rem] rounded-full bg-blue-500/12 blur-3xl" />
+        <div className="absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-sky-400/10 blur-3xl" />
+        <div className="absolute bottom-[-10rem] right-1/4 h-[24rem] w-[24rem] rounded-full bg-slate-300/20 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl">
+          <div className="grid min-h-[500px] grid-cols-1 items-center gap-14 lg:grid-cols-[0.95fr_1.05fr] xl:gap-24">
+            <div className="relative pt-2">
+
+              <div className="w-full max-w-2xl">
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h1 className="mt-2 max-w-xl text-4xl font-black tracking-[-0.04em] text-[#0B1F4D] md:text-5xl">
+                      Vergelijk woningen zonder gedoe.
+                    </h1>
+                  </div>
+
+                  <div className="rounded-full border border-blue-100 bg-white/70 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-700 shadow-sm">
+                    0:30
+                  </div>
+                </div>
+
+                <div className="rounded-[1.25rem] bg-transparent p-0">
+                  <div className="mb-4 flex items-center gap-3 text-xs font-black uppercase tracking-[0.14em] text-gray-400">
+                    <span className="text-blue-700">1 Selecteer</span>
+                    <span>→</span>
+                    <span className="text-blue-700">2 Vergelijk</span>
+                    <span>→</span>
+                    <span className="text-blue-700">3 PDF</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+                      <div className="h-28 overflow-hidden bg-blue-50">
+                        <img
+                          src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=900&q=80"
+                          alt="Woning A"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      <div className="p-3">
+                        <p className="text-xs font-bold text-gray-500">Woning A</p>
+                        <p className="mt-1 text-lg font-black text-[#0B1F4D]">€ 450.000</p>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-500">
+                          <span>EPC B</span>
+                          <span>120 m²</span>
+                        </div>
+
+                        <div className="mt-3 h-2 rounded-full bg-gray-200">
+                          <div className="h-2 w-[72%] rounded-full bg-blue-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="demo-glow relative overflow-hidden rounded-2xl bg-white shadow-md ring-2 ring-blue-600">
+                      <div className="absolute right-3 top-3 z-10 rounded-full bg-blue-700 px-2 py-1 text-[10px] font-black text-white">
+                        Beste
+                      </div>
+
+                      <div className="h-28 overflow-hidden bg-blue-50">
+                        <img
+                          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80"
+                          alt="Woning B"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      <div className="p-3">
+                        <p className="text-xs font-bold text-gray-500">Woning B</p>
+                        <p className="mt-1 text-lg font-black text-[#0B1F4D]">€ 420.000</p>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-gray-500">
+                          <span>EPC A</span>
+                          <span>135 m²</span>
+                        </div>
+
+                        <div className="mt-3 h-2 rounded-full bg-gray-200">
+                          <div className="demo-progress h-2 rounded-full bg-blue-700" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-blue-100 bg-white/55 p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+                      AI conclusie
+                    </p>
+                    <p className="mt-2 text-sm font-bold leading-6 text-[#0B1F4D]">
+                      Woning B scoort beter op prijs, EPC en locatie. PDF rapport klaar.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/45 px-4 py-3 ring-1 ring-white/70">
+                  <button className="demo-play flex h-10 w-10 items-center justify-center rounded-full bg-blue-700 text-sm text-white shadow-lg shadow-blue-700/20">
+                    ▶
+                  </button>
+
+                  <div className="flex-1">
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+                      <div className="demo-progress h-full rounded-full bg-blue-700" />
+                    </div>
+                  </div>
+
+                  <p className="text-sm font-bold text-gray-500">
+                    0:18
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-5 shadow-2xl md:p-7">
-              <div className="mb-6 flex gap-6 border-b border-gray-200">
-                <button className="border-b-2 border-blue-700 pb-3 font-bold text-blue-700">
-                  Kopen
-                </button>
+            <div className="relative flex items-center justify-center lg:justify-end">
+              <div className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-blue-600/8 via-sky-400/8 to-slate-200/20 blur-2xl" />
 
-                <button className="pb-3 text-gray-500">
-                  Huren
-                </button>
+              <div className="relative mt-2 ml-auto w-full max-w-xl rounded-[1.25rem] bg-white/55 p-5 backdrop-blur-sm md:p-6">
+                <div className="mb-5 flex items-center gap-3 border-b border-gray-200">
+                  <button className="relative pb-3 text-base font-extrabold text-blue-700">
+                    Te koop
+                    <span className="absolute bottom-[-1px] left-0 h-1 w-full rounded-full bg-blue-700" />
+                  </button>
+                  <button className="pb-3 text-base font-bold text-gray-500">
+                    Te huur
+                  </button>
+                </div>
 
-                <Link
-                  href="/properties"
-                  className="pb-3 font-bold text-gray-900"
-                >
-                  Vergelijken
-                </Link>
-              </div>
+                <div className="mb-5">
+                  <label className="mb-2 block text-base font-bold text-gray-700">
+                    Voeg een locatie toe
+                  </label>
 
-              <div className="grid grid-cols-1 gap-4">
-                <input
-                  placeholder="Gemeente, postcode of buurt"
-                  className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none"
-                />
+                  <div className="relative">
+                    <input
+                      value={locationQuery}
+                      onChange={(event) => setLocationQuery(event.target.value)}
+                      onFocus={() => {
+                        if (locationSuggestions.length > 0) {
+                          setShowLocationSuggestions(true)
+                        }
+                      }}
+                      placeholder="Gemeente of postcode"
+                      className="w-full rounded-2xl border border-gray-200 bg-[#f8fafc] px-4 py-3 pr-12 text-base font-medium outline-none transition focus:border-blue-600 focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={useCurrentLocation}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl text-blue-700 transition hover:scale-110"
+                      aria-label="Gebruik mijn locatie"
+                    >
+                      ⌖
+                    </button>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <select className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none">
-                    <option>Type woning</option>
-                    <option>Huis</option>
-                    <option>Appartement</option>
-                    <option>Studio</option>
-                    <option>Commercieel</option>
-                  </select>
+                    {showLocationSuggestions && (
+                      <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+                        {locationSuggestions.map((suggestion) => (
+                          <button
+                            key={suggestion.id}
+                            type="button"
+                            onClick={() => {
+                              setLocationQuery(suggestion.label)
+                              setShowLocationSuggestions(false)
+                            }}
+                            className="block w-full px-5 py-3 text-left text-base font-bold text-[#0B1F4D] transition hover:bg-[#eef5ff]"
+                          >
+                            {suggestion.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-                  <select className="rounded-2xl border border-gray-200 bg-[#f6f8fb] p-4 outline-none">
-                    <option>Maximum prijs</option>
-                    <option>€ 250.000</option>
-                    <option>€ 500.000</option>
-                    <option>€ 750.000</option>
-                    <option>€ 1.000.000</option>
-                  </select>
+                    {locationLoading && (
+                      <p className="mt-2 text-sm font-semibold text-blue-700">
+                        Gemeenten zoeken...
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-base font-bold text-gray-700">
+                      Type vastgoed
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={propertyType}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setPropertyType(value)
+
+                          if (propertyTypesWithoutBedrooms.includes(value)) {
+                            setBedrooms(0)
+                          }
+                        }}
+                        className="h-12 w-full appearance-none rounded-xl border border-blue-600 bg-white px-4 pr-12 text-base font-semibold leading-none text-blue-700 outline-none"
+                      >
+                        <option>Selecteer...</option>
+                        <option>Huis</option>
+                        <option>Appartement</option>
+                        <option>Huis en appartement</option>
+                        <option>Nieuwbouwproject - Huizen</option>
+                        <option>Nieuwbouwproject - Appartementen</option>
+                        <option>Nieuwbouwproject</option>
+                        <option>Kot</option>
+                        <option>Garage</option>
+                        <option>Kantoor</option>
+                        <option>Handelszaak</option>
+                        <option>Industrie</option>
+                        <option>Grond</option>
+                        <option>Opbrengsteigendom</option>
+                        <option>Andere</option>
+                      </select>
+
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-blue-700">
+                        ▼
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={bedroomsDisabled ? 'opacity-40' : ''}>
+                    <label className="mb-2 block text-base font-bold text-gray-700">
+                      Minimum aantal slaapkamers
+                    </label>
+
+                    <div className="flex items-center overflow-hidden rounded-xl border border-blue-600 bg-white">
+                      <button
+                        type="button"
+                        disabled={bedroomsDisabled}
+                        onClick={() => setBedrooms((value) => Math.max(0, value - 1))}
+                        className="flex h-12 w-12 items-center justify-center bg-gray-100 text-xl font-black text-gray-500 transition hover:bg-gray-200"
+                      >
+                        -
+                      </button>
+
+                      <div className="flex-1 text-center text-xl font-black text-blue-700">
+                        {bedrooms}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={bedroomsDisabled}
+                        onClick={() => setBedrooms((value) => value + 1)}
+                        className="flex h-12 w-12 items-center justify-center border-l border-blue-600 bg-white text-xl font-black text-blue-700 transition hover:bg-blue-50"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {bedroomsDisabled && (
+                      <p className="mt-2 text-sm font-semibold text-gray-500">
+                        Slaapkamers niet van toepassing voor dit type vastgoed.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-base font-bold text-gray-700">
+                      Minimum
+                    </label>
+
+                    <input
+                      type="number"
+                      value={minPrice}
+                      onChange={(event) => setMinPrice(event.target.value)}
+                      className="w-full rounded-xl border border-blue-600 bg-white px-4 py-3 text-base font-semibold text-blue-700 outline-none"
+                      placeholder="€ 0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-base font-bold text-gray-700">
+                      Maximum
+                    </label>
+
+                    <input
+                      type="number"
+                      value={maxPrice}
+                      onChange={(event) => setMaxPrice(event.target.value)}
+                      className="w-full rounded-xl border border-blue-600 bg-white px-4 py-3 text-base font-semibold text-blue-700 outline-none"
+                      placeholder="€ 0"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBedrooms(0)
+                      setMinPrice('0')
+                      setMaxPrice('0')
+                    }}
+                    className="text-base font-semibold text-blue-700 underline underline-offset-4"
+                  >
+                    Reset
+                  </button>
+
                 </div>
 
                 <Link
                   href="/properties"
-                  className="rounded-2xl bg-blue-700 p-4 text-center font-bold text-white transition hover:bg-blue-600"
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl bg-blue-700 px-7 py-4 text-base font-extrabold text-white shadow-md shadow-blue-700/15 transition hover:bg-blue-800"
                 >
-                  Zoek woningen
+                  <span className="text-2xl">⌕</span>
+                  Zoeken
                 </Link>
-              </div>
-
-              <div className="mt-5 rounded-2xl bg-[#eef5ff] p-4">
-                <p className="font-bold text-blue-800">
-                  Extra slim: vergelijk geselecteerde woningen
-                </p>
-
-                <p className="mt-1 text-sm leading-6 text-gray-600">
-                  Zet woningen naast elkaar en download een overzichtelijk
-                  PDF-rapport.
-                </p>
               </div>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="px-5 py-10 md:px-10">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-3">
-          <ServiceCard
-            title="Vergelijk woningen"
-            text="Bekijk prijs, oppervlakte, EPC, kamers en voorzieningen naast elkaar."
-          />
-
-          <ServiceCard
-            title="PDF rapport"
-            text="Download je vergelijking als duidelijk rapport om later te bewaren of te delen."
-          />
-
-          <ServiceCard
-            title="Favorieten"
-            text="Bewaar interessante woningen en open ze later opnieuw."
-          />
-        </div>
-      </section>
-
-      {latestProperties.length > 0 && (
-        <section className="px-5 py-10 md:px-10">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-7 flex items-end justify-between gap-5">
+          <div className="relative mx-auto mt-10 max-w-7xl rounded-[1.5rem] border border-blue-100 bg-white/65 p-5 shadow-lg shadow-blue-900/5 backdrop-blur-sm md:p-6">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
               <div>
-                <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
-                  Nieuw
+                <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">
+                  Slimme hulp
                 </p>
-
-                <h2 className="text-4xl font-bold">
-                  Nieuwste woningen
+                <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-[#0B1F4D] md:text-3xl">
+                  Meer weten over een pand?
                 </h2>
+                <p className="mt-2 max-w-md text-sm leading-6 text-gray-600">
+                  Vergelijk vastgoed en stel je vragen online.
+                </p>
               </div>
 
-              <Link href="/properties" className="text-gray-500 hover:text-blue-700">
-                Alle woningen →
-              </Link>
-            </div>
+              <div>
+                <textarea
+                  placeholder="Wil je kopen, huren of eerst vastgoed vergelijken?"
+                  onChange={() => setQuestionSent(false)}
+                  className="min-h-[95px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#111827] outline-none transition focus:border-blue-600"
+                />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {latestProperties.map((property) => (
-                <Link
-                  key={property.id}
-                  href={`/properties/${property.id}`}
-                  className="overflow-hidden rounded-[2rem] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <img
-                    src={property.image}
-                    alt={property.title}
-                    className="h-64 w-full object-cover"
-                  />
+                <div className="mt-3 flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setQuestionSent(true)}
+                    className="inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-800"
+                  >
+                    Vraag versturen
+                  </button>
 
-                  <div className="p-6">
-                    <h3 className="text-2xl font-bold">
-                      {property.title}
-                    </h3>
-
-                    <p className="mt-2 text-2xl font-bold text-blue-700">
-                      {formatPrice(property.price)}
+                  {questionSent && (
+                    <p className="text-sm font-bold text-green-600">
+                      Vraag verzonden ✓
                     </p>
-
-                    <p className="mt-1 text-gray-500">
-                      {property.city}
-                    </p>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <Badge text={`${property.slaapkamers || '-'} slp.`} />
-                      <Badge text={`${property.bewoonbare_oppervlakte || '-'} m²`} />
-                      <Badge text={`EPC ${property.epc || '-'}`} />
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </section>
-      )}
+      </section>
 
-      <section className="px-5 py-16 md:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] bg-[#111827] p-8 text-white md:p-14">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-center">
+      <section className="px-5 pb-16 md:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 className="text-4xl font-bold md:text-5xl">
-                Meer overzicht. Minder twijfel.
-              </h2>
-
-              <p className="mt-5 max-w-xl text-lg leading-8 text-gray-300">
-                Selecteer woningen, vergelijk kenmerken en download een rapport
-                dat je makkelijk kunt bewaren of bespreken.
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-blue-700">
+                Nieuw toegevoegd
               </p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.03em] text-[#0B1F4D]">
+                Nieuwste woningen
+              </h2>
             </div>
 
-            <div className="flex md:justify-end">
+            <Link
+              href="/properties"
+              className="text-base font-bold text-blue-700 transition hover:text-blue-900"
+            >
+              Bekijk alles →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {latestProperties.map((property) => (
               <Link
-                href="/properties"
-                className="rounded-2xl bg-white px-7 py-4 font-bold text-black"
+                key={property.id}
+                href={`/properties/${property.id}`}
+                className="block overflow-hidden rounded-[1.5rem] bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1"
               >
-                Start vergelijking
+                <div className="h-52 bg-gradient-to-br from-blue-100 via-white to-blue-200">
+                  {(() => {
+                    const imageSrc =
+                      property.image_url ||
+                      property.image ||
+                      property.photo_url ||
+                      property.main_image ||
+                      property.images?.[0]
+
+                    return imageSrc ? (
+                      <img
+                        src={imageSrc}
+                        alt={property.title || 'Property'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null
+                  })()}
+                </div>
+
+                <div className="p-5">
+                  <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">
+                    {property.city || 'België'}
+                  </p>
+
+                  <h3 className="mt-2 text-2xl font-black text-[#0B1F4D]">
+                    {property.title || 'Woning'}
+                  </h3>
+
+                  <p className="mt-4 text-xl font-black text-blue-700">
+                    € {property.price?.toLocaleString() || '0'}
+                  </p>
+                </div>
               </Link>
-            </div>
+            ))}
           </div>
         </div>
       </section>
     </main>
-  )
-}
-
-function ServiceCard({
-  title,
-  text,
-}: {
-  title: string
-  text: string
-}) {
-  return (
-    <div className="rounded-[2rem] bg-white p-8 shadow-lg">
-      <h3 className="text-2xl font-bold">{title}</h3>
-      <p className="mt-4 leading-8 text-gray-600">{text}</p>
-    </div>
-  )
-}
-
-function Badge({ text }: { text: string }) {
-  return (
-    <span className="rounded-full bg-[#eef2ff] px-4 py-2 text-sm font-semibold text-blue-700">
-      {text}
-    </span>
   )
 }
