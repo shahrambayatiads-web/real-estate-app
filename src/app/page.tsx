@@ -50,6 +50,12 @@ export default function HomePage() {
   const bedroomsDisabled = propertyTypesWithoutBedrooms.includes(propertyType)
   const [latestProperties, setLatestProperties] = useState<Property[]>([])
   const [questionSent, setQuestionSent] = useState(false)
+  const [questionText, setQuestionText] = useState('')
+  const [questionEmail, setQuestionEmail] = useState('')
+  const [sendingQuestion, setSendingQuestion] = useState(false)
+  const [aiAnswer, setAiAnswer] = useState('')
+  const [savingAlert, setSavingAlert] = useState(false)
+  const [searchAlertSaved, setSearchAlertSaved] = useState(false)
 
   useEffect(() => {
     async function loadLatestProperties() {
@@ -58,7 +64,7 @@ export default function HomePage() {
           .from('properties')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(6)
+          .limit(4)
 
         if (data) {
           setLatestProperties(data)
@@ -185,6 +191,89 @@ export default function HomePage() {
     return () => clearTimeout(timeout)
   }, [locationQuery])
 
+  async function sendQuestion() {
+    const text = questionText.trim()
+
+    if (!text) {
+      alert('Voer eerst een vraag in.')
+      return
+    }
+
+    try {
+      setSendingQuestion(true)
+
+      const { error } = await supabase.from('questions').insert({
+        message: text,
+        email: questionEmail.trim() || null,
+      })
+
+      const aiResponse = await fetch('/api/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: text,
+        }),
+      })
+
+      const aiData = await aiResponse.json()
+
+      if (error) {
+        console.log(error)
+        alert('Vraag kon niet worden verzonden.')
+        return
+      }
+
+      if (aiData.answer) {
+        setAiAnswer(aiData.answer)
+      }
+
+      setQuestionSent(true)
+      setQuestionText('')
+      setQuestionEmail('')
+    } catch (error) {
+      console.log(error)
+      alert('Vraag kon niet worden verzonden.')
+    } finally {
+      setSendingQuestion(false)
+    }
+  }
+
+  async function saveSearchAlert() {
+    if (!questionEmail.trim()) {
+      alert('Voer eerst een e-mailadres in.')
+      return
+    }
+
+    try {
+      setSavingAlert(true)
+
+      const { error } = await supabase.from('search_alerts').insert({
+        email: questionEmail.trim(),
+        location: locationQuery || null,
+        property_type: propertyType || null,
+        min_price: Number(minPrice) || 0,
+        max_price: Number(maxPrice) || 0,
+        bedrooms: bedrooms || 0,
+      })
+
+      if (error) {
+        console.log(error)
+        alert('Zoekopdracht kon niet worden opgeslagen.')
+        return
+      }
+
+      setSearchAlertSaved(true)
+      setQuestionEmail('')
+    } catch (error) {
+      console.log(error)
+      alert('Zoekopdracht kon niet worden opgeslagen.')
+    } finally {
+      setSavingAlert(false)
+    }
+  }
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#f5f7fb] text-[#111827]">
       <style>{`
@@ -216,7 +305,7 @@ export default function HomePage() {
           animation: glowCard 3s ease-in-out infinite;
         }
       `}</style>
-      <section className="relative px-5 py-6 md:px-10 md:py-8">
+      <section className="relative px-5 py-8 md:px-10 md:py-10">
         <div className="absolute left-[-12rem] top-[-8rem] h-[30rem] w-[30rem] rounded-full bg-blue-500/12 blur-3xl" />
         <div className="absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-sky-400/10 blur-3xl" />
         <div className="absolute bottom-[-10rem] right-1/4 h-[24rem] w-[24rem] rounded-full bg-slate-300/20 blur-3xl" />
@@ -332,7 +421,7 @@ export default function HomePage() {
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-blue-600/8 via-sky-400/8 to-slate-200/20 blur-2xl" />
 
-              <div className="relative mt-2 ml-auto w-full max-w-xl rounded-[1.25rem] bg-white/55 p-5 backdrop-blur-sm md:p-6">
+              <div className="relative mt-2 ml-auto w-full max-w-xl rounded-[1.5rem] border border-white/80 bg-white/80 p-5 shadow-xl shadow-blue-900/5 backdrop-blur-sm md:p-6">
                 <div className="mb-5 flex items-center gap-3 border-b border-gray-200">
                   <button className="relative pb-3 text-base font-extrabold text-blue-700">
                     Te koop
@@ -523,11 +612,49 @@ export default function HomePage() {
                   <span className="text-2xl">⌕</span>
                   Zoeken
                 </Link>
+
+                <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 shadow-sm shadow-blue-900/5">
+                  <p className="text-sm font-black text-[#0B1F4D]">
+                    Ontvang nieuwe panden per e-mail
+                  </p>
+
+                  <p className="mt-1 text-sm text-gray-600">
+                    Bewaar je zoekopdracht en ontvang meldingen wanneer nieuwe panden matchen.
+                  </p>
+
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="email"
+                      value={questionEmail}
+                      onChange={(event) => {
+                        setQuestionEmail(event.target.value)
+                        setSearchAlertSaved(false)
+                      }}
+                      placeholder="E-mailadres"
+                      className="h-11 flex-1 rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium outline-none transition focus:border-blue-600"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={saveSearchAlert}
+                      disabled={savingAlert}
+                      className="rounded-xl bg-blue-700 px-4 text-sm font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {savingAlert ? 'Opslaan...' : 'Bewaar'}
+                    </button>
+                  </div>
+
+                  {searchAlertSaved && (
+                    <p className="mt-3 text-sm font-bold text-green-600">
+                      Zoekopdracht opgeslagen ✓
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-          <div className="relative mx-auto mt-10 max-w-7xl rounded-[1.5rem] border border-blue-100 bg-white/65 p-5 shadow-lg shadow-blue-900/5 backdrop-blur-sm md:p-6">
+          <div className="relative mx-auto mt-8 max-w-7xl rounded-[1.5rem] border border-blue-100 bg-white/75 p-5 shadow-xl shadow-blue-900/5 backdrop-blur-sm md:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">
@@ -539,22 +666,59 @@ export default function HomePage() {
                 <p className="mt-2 max-w-md text-sm leading-6 text-gray-600">
                   Vergelijk vastgoed en stel je vragen online.
                 </p>
+
+                {aiAnswer && (
+                  <div className="mt-16 max-w-md rounded-2xl border border-blue-100 bg-white/80 p-4 shadow-sm shadow-blue-900/5">
+                    <p className="text-sm font-black text-[#0B1F4D]">
+                      Antwoord bewaren?
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-gray-600">
+                      Laat je e-mailadres achter als je later verder wilt gaan met je vraag.
+                    </p>
+
+                    <div className="relative mt-3">
+                      <input
+                        type="email"
+                        value={questionEmail}
+                        placeholder="E-mailadres"
+                        onChange={(event) => setQuestionEmail(event.target.value)}
+                        className="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 pr-14 text-sm font-medium text-[#111827] outline-none transition focus:border-blue-600"
+                      />
+
+                      <button
+                        type="button"
+                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-blue-700 text-sm font-black text-white transition hover:bg-blue-800"
+                        aria-label="Bewaren"
+                      >
+                        ✓
+                      </button>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               <div>
                 <textarea
+                  value={questionText}
                   placeholder="Wil je kopen, huren of eerst vastgoed vergelijken?"
-                  onChange={() => setQuestionSent(false)}
+                  onChange={(event) => {
+                    setQuestionText(event.target.value)
+                    setQuestionSent(false)
+                    setAiAnswer('')
+                  }}
                   className="min-h-[95px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#111827] outline-none transition focus:border-blue-600"
                 />
 
                 <div className="mt-3 flex items-center gap-4">
                   <button
                     type="button"
-                    onClick={() => setQuestionSent(true)}
-                    className="inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-800"
+                    onClick={sendQuestion}
+                    disabled={sendingQuestion}
+                    className="inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Vraag versturen
+                    {sendingQuestion ? 'Verzenden...' : 'Vraag versturen'}
                   </button>
 
                   {questionSent && (
@@ -563,19 +727,31 @@ export default function HomePage() {
                     </p>
                   )}
                 </div>
+
+                {aiAnswer && (
+                  <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/80 p-5 shadow-sm shadow-blue-900/5">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">
+                      SlimWoning
+                    </p>
+
+                    <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#0B1F4D]">
+                      {aiAnswer}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
       </section>
 
-      <section className="px-5 pb-16 md:px-10">
+      <section className="px-5 pb-20 pt-2 md:px-10">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-7 flex items-end justify-between gap-6">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.2em] text-blue-700">
                 Nieuw toegevoegd
               </p>
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.03em] text-[#0B1F4D]">
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.035em] text-[#0B1F4D] md:text-4xl">
                 Nieuwste woningen
               </h2>
             </div>
@@ -588,14 +764,14 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
             {latestProperties.map((property) => (
               <Link
                 key={property.id}
                 href={`/properties/${property.id}`}
-                className="block overflow-hidden rounded-[1.5rem] bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1"
+                className="block overflow-hidden rounded-[1.35rem] bg-white shadow-md shadow-slate-900/5 ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10"
               >
-                <div className="h-52 bg-gradient-to-br from-blue-100 via-white to-blue-200">
+                <div className="h-44 bg-gradient-to-br from-blue-100 via-white to-blue-200">
                   {(() => {
                     const imageSrc =
                       property.image_url ||
@@ -614,12 +790,12 @@ export default function HomePage() {
                   })()}
                 </div>
 
-                <div className="p-5">
+                <div className="p-4">
                   <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">
                     {property.city || 'België'}
                   </p>
 
-                  <h3 className="mt-2 text-2xl font-black text-[#0B1F4D]">
+                  <h3 className="mt-2 text-xl font-black text-[#0B1F4D]">
                     {property.title || 'Woning'}
                   </h3>
 
