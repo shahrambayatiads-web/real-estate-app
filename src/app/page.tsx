@@ -56,6 +56,17 @@ export default function HomePage() {
   const [aiAnswer, setAiAnswer] = useState('')
   const [savingAlert, setSavingAlert] = useState(false)
   const [searchAlertSaved, setSearchAlertSaved] = useState(false)
+  const [guestQuestionsUsed, setGuestQuestionsUsed] = useState(0)
+  const [showGuestLimitMessage, setShowGuestLimitMessage] = useState(false)
+  const FREE_LIMIT = 3
+
+  useEffect(() => {
+    const used = localStorage.getItem('slimmo_guest_questions')
+
+    if (used) {
+      setGuestQuestionsUsed(Number(used))
+    }
+  }, [])
 
   useEffect(() => {
     async function loadLatestProperties() {
@@ -198,6 +209,10 @@ export default function HomePage() {
       alert('Voer eerst een vraag in.')
       return
     }
+    if (guestQuestionsUsed >= FREE_LIMIT) {
+      setShowGuestLimitMessage(true)
+      return
+    }
 
     try {
       setSendingQuestion(true)
@@ -228,6 +243,15 @@ export default function HomePage() {
       if (aiData.answer) {
         setAiAnswer(aiData.answer)
       }
+
+      const newCount = guestQuestionsUsed + 1
+
+      setGuestQuestionsUsed(newCount)
+
+      localStorage.setItem(
+        'slimmo_guest_questions',
+        String(newCount)
+      )
 
       setQuestionSent(true)
       setQuestionText('')
@@ -606,7 +630,14 @@ export default function HomePage() {
                 </div>
 
                 <Link
-                  href="/properties"
+                  href={{
+                    pathname: '/properties',
+                    query: {
+                      search: locationQuery,
+                      city: locationQuery,
+                      maxPrice,
+                    },
+                  }}
                   className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl bg-blue-700 px-7 py-4 text-base font-extrabold text-white shadow-md shadow-blue-700/15 transition hover:bg-blue-800"
                 >
                   <span className="text-2xl">⌕</span>
@@ -657,9 +688,6 @@ export default function HomePage() {
           <div className="relative mx-auto mt-8 max-w-7xl rounded-[1.5rem] border border-blue-100 bg-white/75 p-5 shadow-xl shadow-blue-900/5 backdrop-blur-sm md:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">
-                  Slimme hulp
-                </p>
                 <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-[#0B1F4D] md:text-3xl">
                   Meer weten over een pand?
                 </h2>
@@ -702,10 +730,12 @@ export default function HomePage() {
               <div>
                 <textarea
                   value={questionText}
+                  disabled={false}
                   placeholder="Wil je kopen, huren of eerst vastgoed vergelijken?"
                   onChange={(event) => {
                     setQuestionText(event.target.value)
                     setQuestionSent(false)
+                    setShowGuestLimitMessage(false)
                     setAiAnswer('')
                   }}
                   className="min-h-[95px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#111827] outline-none transition focus:border-blue-600"
@@ -728,6 +758,20 @@ export default function HomePage() {
                   )}
                 </div>
 
+                {showGuestLimitMessage && guestQuestionsUsed >= FREE_LIMIT && (
+                  <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="text-sm font-bold text-[#0B1F4D]">
+                      Maak een account aan om Slimmo onbeperkt te gebruiken.
+                    </p>
+
+                    <Link
+                      href="/register"
+                      className="mt-3 inline-flex rounded-xl bg-blue-700 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-800"
+                    >
+                      Account aanmaken
+                    </Link>
+                  </div>
+                )}
                 {aiAnswer && (
                   <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/80 p-5 shadow-sm shadow-blue-900/5">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">

@@ -45,7 +45,18 @@ function CompareContent() {
 
   async function getProperties() {
     if (ids.length === 0) {
-      setProperties([])
+      const savedSelection = JSON.parse(
+        localStorage.getItem('selectedProperties') ||
+          localStorage.getItem('compareProperties') ||
+          '[]'
+      )
+
+      if (Array.isArray(savedSelection) && savedSelection.length >= 2) {
+        setProperties(savedSelection)
+      } else {
+        setProperties([])
+      }
+
       setLoading(false)
       return
     }
@@ -72,24 +83,10 @@ function CompareContent() {
 
     await Promise.all(
       properties.map(async (property) => {
-        if (!property.latitude || !property.longitude) return
+        const data = await fetchLocationAnalysisForProperty(property)
 
-        try {
-          const response = await fetch('/api/location-analysis', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              latitude: Number(property.latitude),
-              longitude: Number(property.longitude),
-            }),
-          })
-
-          const data = await response.json()
+        if (data) {
           results[property.id] = data
-        } catch (error) {
-          console.log(error)
         }
       })
     )
@@ -98,8 +95,88 @@ function CompareContent() {
     setLocationLoading(false)
   }
 
+  async function fetchLocationAnalysisForProperty(property: any) {
+    const hasUsableAddress = Boolean(
+      String(property.address || '').trim() ||
+        String(property.street || '').trim() ||
+        String(property.postcode || '').trim()
+    )
+
+    if ((!property.latitude || !property.longitude) && !hasUsableAddress) {
+      return null
+    }
+
+    try {
+      const response = await fetch('/api/location-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          latitude: Number(property.latitude) || 0,
+          longitude: Number(property.longitude) || 0,
+          address: property.address,
+          street: property.street,
+          postcode: property.postcode,
+          city: property.city,
+        }),
+      })
+
+      if (!response.ok) {
+        console.log('Location analysis failed:', await response.text())
+        return null
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.log(error)
+      return null
+    }
+  }
+
   function numberValue(value: any) {
     return Number(String(value || '').replace(/[^\d.]/g, '')) || 0
+  }
+
+  function propertyCategory(property: any) {
+    const type = String(property.woning_type || '').toLowerCase()
+
+    if (type.includes('grond')) return 'land'
+    if (type.includes('garage')) return 'garage'
+    if (type.includes('kantoor')) return 'office'
+    if (type.includes('handel')) return 'commercial'
+    if (type.includes('winkel')) return 'commercial'
+
+    return 'residential'
+  }
+
+  function isResidential(property: any) {
+    return propertyCategory(property) === 'residential'
+  }
+
+  function mainSurface(property: any) {
+    const category = propertyCategory(property)
+
+    if (category === 'land') {
+      return numberValue(property.grondoppervlakte)
+    }
+
+    return numberValue(property.bewoonbare_oppervlakte) || numberValue(property.grondoppervlakte)
+  }
+
+  function mainSurfaceLabel(property: any) {
+    const category = propertyCategory(property)
+
+    if (category === 'land') return 'Grondoppervlakte'
+    if (category === 'garage') return 'Oppervlakte'
+    if (category === 'office') return 'Kantoorruimte'
+    if (category === 'commercial') return 'Handelsruimte'
+
+    return 'Oppervlakte'
+  }
+
+  function notApplicableForType(property: any) {
+    return !isResidential(property)
   }
 
   function formatPrice(value: any) {
@@ -115,7 +192,7 @@ function CompareContent() {
 
   function pricePerM2(property: any) {
     const price = numberValue(property.price)
-    const surface = numberValue(property.bewoonbare_oppervlakte)
+    const surface = mainSurface(property)
 
     if (!price || !surface) return 0
 
@@ -123,6 +200,8 @@ function CompareContent() {
   }
 
   function epcScore(property: any) {
+    if (notApplicableForType(property) && !property.epc) return 0
+
     const epc = String(property.epc || '').toUpperCase()
 
     if (epc.includes('A+')) return 100
@@ -137,6 +216,36 @@ function CompareContent() {
   }
 
   function comfortScore(property: any) {
+    const category = propertyCategory(property)
+
+    if (category === 'land') {
+      let total = 25
+      total += property.address ? 20 : 0
+      total += property.latitude && property.longitude ? 20 : 0
+      total += numberValue(property.grondoppervlakte) >= 500 ? 25 : 0
+      total += pricePerM2(property) > 0 ? 10 : 0
+      return Math.min(100, total)
+    }
+
+    if (category === 'garage') {
+      let total = 35
+      total += property.address ? 20 : 0
+      total += property.latitude && property.longitude ? 20 : 0
+      total += mainSurface(property) >= 15 ? 15 : 0
+      total += property.parking ? 10 : 0
+      return Math.min(100, total)
+    }
+
+    if (category === 'office' || category === 'commercial') {
+      let total = 25
+      total += mainSurface(property) >= 80 ? 25 : 0
+      total += property.parking ? 15 : 0
+      total += property.lift ? 10 : 0
+      total += property.address ? 15 : 0
+      total += property.latitude && property.longitude ? 10 : 0
+      return Math.min(100, total)
+    }
+
     let total = 0
 
     total += property.parking ? 18 : 0
@@ -151,9 +260,34 @@ function CompareContent() {
   }
 
   function spaceScore(property: any) {
+    const category = propertyCategory(property)
     const surface = numberValue(property.bewoonbare_oppervlakte)
     const bedrooms = numberValue(property.slaapkamers)
     const land = numberValue(property.grondoppervlakte)
+
+    if (category === 'land') {
+      let total = 0
+      total += Math.min(85, land / 8)
+      if (property.address) total += 7
+      if (property.latitude && property.longitude) total += 8
+      return Math.min(100, Math.round(total))
+    }
+
+    if (category === 'garage') {
+      let total = 0
+      total += Math.min(80, mainSurface(property) * 4)
+      if (property.address) total += 10
+      if (property.latitude && property.longitude) total += 10
+      return Math.min(100, Math.round(total))
+    }
+
+    if (category === 'office' || category === 'commercial') {
+      let total = 0
+      total += Math.min(80, mainSurface(property) / 2)
+      if (property.parking) total += 10
+      if (property.lift) total += 10
+      return Math.min(100, Math.round(total))
+    }
 
     let total = 0
     total += Math.min(55, surface / 2)
@@ -201,10 +335,30 @@ function CompareContent() {
   }
 
   function totalScore(property: any) {
+    const category = propertyCategory(property)
     const priceScore = Math.max(
       0,
       100 - Math.min(100, pricePerM2(property) / 60)
     )
+
+    if (category === 'land' || category === 'garage') {
+      return Math.round(
+        spaceScore(property) * 0.35 +
+          locationScore(property) * 0.3 +
+          priceScore * 0.25 +
+          comfortScore(property) * 0.1
+      )
+    }
+
+    if (category === 'office' || category === 'commercial') {
+      return Math.round(
+        spaceScore(property) * 0.25 +
+          comfortScore(property) * 0.25 +
+          locationScore(property) * 0.25 +
+          priceScore * 0.2 +
+          epcScore(property) * 0.05
+      )
+    }
 
     return Math.round(
       spaceScore(property) * 0.25 +
@@ -218,15 +372,28 @@ function CompareContent() {
   function autoPlus(property: any) {
     const items: string[] = []
     const analysis = locationData[property.id]
+    const category = propertyCategory(property)
+    const residential = isResidential(property)
 
-    if (epcScore(property) >= 80) items.push('Sterke energieprestatie')
-    if (property.parking) items.push('Parking aanwezig')
-    if (property.tuin) items.push('Tuin aanwezig')
-    if (property.terras) items.push('Terras aanwezig')
-    if (property.lift) items.push('Lift aanwezig')
-    if (property.dubbel_glas) items.push('Dubbel glas')
+    if (residential && epcScore(property) >= 80) items.push('Sterke energieprestatie')
 
-    if (numberValue(property.bewoonbare_oppervlakte) >= 120) {
+    if (residential) {
+      if (property.parking) items.push('Parking aanwezig')
+      if (property.tuin) items.push('Tuin aanwezig')
+      if (property.terras) items.push('Terras aanwezig')
+      if (property.lift) items.push('Lift aanwezig')
+      if (property.dubbel_glas) items.push('Dubbel glas')
+    }
+
+    if (category === 'land') {
+      if (numberValue(property.grondoppervlakte) >= 500) items.push('Ruime grondoppervlakte')
+    } else if (category === 'garage') {
+      if (mainSurface(property) >= 15) items.push('Praktische garageoppervlakte')
+    } else if (category === 'office' || category === 'commercial') {
+      if (mainSurface(property) >= 80) items.push('Ruime bruikbare oppervlakte')
+      if (property.parking) items.push('Parking aanwezig')
+      if (property.lift) items.push('Lift aanwezig')
+    } else if (numberValue(property.bewoonbare_oppervlakte) >= 120) {
       items.push('Ruime bewoonbare oppervlakte')
     }
 
@@ -252,15 +419,23 @@ function CompareContent() {
   function autoMinus(property: any) {
     const items: string[] = []
     const analysis = locationData[property.id]
+    const category = propertyCategory(property)
+    const residential = isResidential(property)
 
-    if (epcScore(property) < 50) items.push('Energieprestatie kan beter')
-    if (!property.parking) items.push('Geen parking opgegeven')
+    if (residential && epcScore(property) < 50) items.push('Energieprestatie kan beter')
+    if (residential && !property.parking) items.push('Geen parking opgegeven')
 
-    if (!property.tuin && property.woning_type === 'Huis') {
+    if (residential && !property.tuin && property.woning_type === 'Huis') {
       items.push('Geen tuin opgegeven')
     }
 
-    if (numberValue(property.bewoonbare_oppervlakte) < 80) {
+    if (category === 'land') {
+      if (numberValue(property.grondoppervlakte) < 250) items.push('Beperkte grondoppervlakte')
+    } else if (category === 'garage') {
+      if (mainSurface(property) < 12) items.push('Beperkte garageoppervlakte')
+    } else if (category === 'office' || category === 'commercial') {
+      if (mainSurface(property) < 50) items.push('Beperkte bruikbare oppervlakte')
+    } else if (numberValue(property.bewoonbare_oppervlakte) < 80) {
       items.push('Beperkte woonoppervlakte')
     }
 
@@ -364,55 +539,519 @@ function CompareContent() {
   }, null)
 
   async function downloadPDF() {
-    const pdf = new jsPDF()
-    let y = 20
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const freshLocationData: any = { ...locationData }
 
-    pdf.setFontSize(22)
-    pdf.text('SlimWoning - Slim Vergelijkingsrapport', 20, y)
+    await Promise.all(
+      properties.map(async (property) => {
+        const data = await fetchLocationAnalysisForProperty(property)
 
-    y += 12
-    pdf.setFontSize(11)
-    pdf.text(`Aantal woningen: ${properties.length}`, 20, y)
+        if (data) {
+          freshLocationData[property.id] = data
+        }
+      })
+    )
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 12
 
-    y += 12
-    pdf.text(`Beste algemene keuze: ${bestOverall?.title || '-'}`, 20, y)
+    const navy = '#071B4D'
+    const blue = '#0B57D0'
+    const text = '#0B1F4D'
+    const muted = '#64748B'
+    const border = '#DDE6F3'
+    const soft = '#F8FAFC'
+    const lightBlue = '#EFF6FF'
+    const lightGreen = '#ECFDF5'
+    const lightRed = '#FEF2F2'
+    const green = '#15803D'
+    const red = '#DC2626'
 
-    properties.forEach((property, index) => {
-      if (y > 240) {
-        pdf.addPage()
-        y = 20
+    async function imageToDataUrl(url: string) {
+      if (!url) return null
+
+      try {
+        const response = await fetch(url)
+
+        if (!response.ok) return null
+
+        const blob = await response.blob()
+
+        if (!blob.type.startsWith('image/')) return null
+
+        return await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(String(reader.result))
+          reader.readAsDataURL(blob)
+        })
+      } catch (error) {
+        console.log(error)
+        return null
+      }
+    }
+    const logoDataUrl = await imageToDataUrl('/logo.png')
+
+    function sanitize(value: any) {
+      return String(value || '-')
+        .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+        .replace(/Ø=ÞÍ/g, '')
+    }
+
+    function shortText(value: string, max = 70) {
+      const clean = sanitize(value)
+      return clean.length > max ? `${clean.slice(0, max)}...` : clean
+    }
+
+    function formatPdfDate() {
+      return new Intl.DateTimeFormat('nl-BE', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date())
+    }
+
+    function addHeader() {
+      pdf.setFillColor(navy)
+      pdf.rect(0, 0, pageWidth, 26, 'F')
+
+      if (logoDataUrl?.startsWith('data:image/')) {
+        const logoFormat = logoDataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'
+        pdf.setFillColor('#FFFFFF')
+        pdf.roundedRect(10, 4.5, 33, 17, 2.5, 2.5, 'F')
+        pdf.addImage(logoDataUrl, logoFormat, 13.5, 5.8, 26, 14.2)
+      } else {
+        pdf.setDrawColor('#FFFFFF')
+        pdf.setLineWidth(0.9)
+        pdf.line(12, 10, 23, 5)
+        pdf.line(23, 5, 36, 10)
+        pdf.line(34, 9.3, 41, 9.3)
+        pdf.line(34, 9.3, 34, 7)
+
+        pdf.setTextColor('#FFFFFF')
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(12)
+        pdf.text('Slim', 12, 19)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text('Woning', 23, 19)
       }
 
-      y += 16
-      pdf.setFontSize(16)
-      pdf.text(`${index + 1}. ${property.title || '-'}`, 20, y)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(8)
+      pdf.setTextColor('#D7E4FF')
+      pdf.text('Gegenereerd op', pageWidth - margin, 10, { align: 'right' })
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(10)
+      pdf.setTextColor('#FFFFFF')
+      pdf.text(formatPdfDate(), pageWidth - margin, 19, { align: 'right' })
+    }
 
-      y += 9
-      pdf.setFontSize(11)
-
-      const lines = [
-        `Prijs: ${formatPrice(property.price)}`,
-        `Adres: ${property.address || '-'}, ${property.city || '-'}`,
-        `Prijs per m²: ${pricePerM2(property) ? `± € ${pricePerM2(property)} op basis van vraagprijs` : '-'}`,
-        `Slaapkamers: ${property.slaapkamers || '-'}`,
-        `Badkamers: ${property.badkamers || '-'}`,
-        `Oppervlakte: ${property.bewoonbare_oppervlakte || '-'} m²`,
-        `EPC: ${property.epc || '-'}`,
-        `SlimScore: ${totalScore(property)}/100`,
-        `LocatieScore: ${locationScore(property)}/100`,
-        `Omgeving: ${nearbyPdfSummary(locationData[property.id])}`,
-        `Sterke punten: ${autoPlus(property).join(', ')}`,
-        `Aandachtspunten: ${autoMinus(property).join(', ')}`,
-      ]
-
-      lines.forEach((line) => {
-        const wrapped = pdf.splitTextToSize(line, 170)
-        pdf.text(wrapped, 20, y)
-        y += wrapped.length * 6
+    function addFooter() {
+      pdf.setFillColor(navy)
+      pdf.rect(0, pageHeight - 15, pageWidth, 15, 'F')
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor('#FFFFFF')
+      pdf.text('Dit rapport is automatisch gegenereerd door SlimWoning.', margin, pageHeight - 6)
+      pdf.text(`Pagina ${pdf.getNumberOfPages()}`, pageWidth - margin, pageHeight - 6, {
+        align: 'right',
       })
+    }
+
+    function drawScoreCircle(x: number, yPos: number, score: number, color: string, label: string) {
+      pdf.setDrawColor(color)
+      pdf.setLineWidth(1.8)
+      pdf.circle(x, yPos, 10)
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(8)
+      pdf.setTextColor(color)
+      pdf.text(`${Math.min(99, score)}/100`, x, yPos + 1.3, { align: 'center' })
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(6.2)
+      pdf.setTextColor(muted)
+      pdf.text(label, x, yPos + 15, { align: 'center' })
+    }
+
+    function drawEpcBadge(x: number, yPos: number, epc: string) {
+      const value = String(epc || '-').toUpperCase()
+      const color = value.includes('A')
+        ? '#22C55E'
+        : value.includes('B')
+          ? '#84CC16'
+          : value.includes('C')
+            ? '#EAB308'
+            : '#F97316'
+
+      pdf.setFillColor(navy)
+      pdf.roundedRect(x, yPos, 18, 8, 2, 2, 'F')
+
+      pdf.setFillColor(color)
+      pdf.roundedRect(x + 11, yPos, 7, 8, 2, 2, 'F')
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(8)
+      pdf.setTextColor('#FFFFFF')
+      pdf.text('EPC', x + 5.5, yPos + 5.4, { align: 'center' })
+
+      pdf.setTextColor('#FFFFFF')
+      pdf.text(value, x + 14.5, yPos + 5.4, { align: 'center' })
+    }
+
+    function drawTableEpcBadge(x: number, yPos: number, epc: string) {
+      const value = String(epc || '-').toUpperCase()
+      const color = value.includes('A')
+        ? '#22C55E'
+        : value.includes('B')
+          ? '#84CC16'
+          : value.includes('C')
+            ? '#EAB308'
+            : '#F97316'
+
+      pdf.setFillColor('#EAF7EA')
+      pdf.roundedRect(x, yPos, 12, 9, 2, 2, 'F')
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(9)
+      pdf.setTextColor(color)
+      pdf.text(value, x + 6, yPos + 6.4, { align: 'center' })
+    }
+
+    function drawInfoCell(
+      x: number,
+      yPos: number,
+      width: number,
+      label: string,
+      value: string,
+      sideLabel?: string,
+      sideValue?: string
+    ) {
+      pdf.setDrawColor(border)
+      pdf.setFillColor('#FFFFFF')
+      pdf.roundedRect(x, yPos, width, 22, 3, 3, 'FD')
+
+      if (sideValue) {
+        pdf.setFont('helvetica', 'normal')
+        pdf.setFontSize(7)
+        pdf.setTextColor(muted)
+        pdf.text(label, x + 5, yPos + 7)
+
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(11)
+        pdf.setTextColor(text)
+        pdf.text(shortText(value, 12), x + 5, yPos + 16)
+
+        pdf.setFillColor('#EFF6FF')
+        pdf.roundedRect(x + width - 28, yPos + 4, 23, 14, 2, 2, 'F')
+
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(5.5)
+        pdf.setTextColor(blue)
+        pdf.text(sideLabel || '', x + width - 16.5, yPos + 9, {
+          align: 'center',
+        })
+
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(8.5)
+        pdf.setTextColor(blue)
+        pdf.text(sideValue, x + width - 16.5, yPos + 15, {
+          align: 'center',
+        })
+
+        return
+      }
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor(muted)
+      pdf.text(label, x + width / 2, yPos + 7, {
+        align: 'center',
+      })
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(11)
+      pdf.setTextColor(text)
+      pdf.text(shortText(value, 18), x + width / 2, yPos + 16, {
+        align: 'center',
+      })
+    }
+
+    function drawTextBox(x: number, yPos: number, width: number, height: number, title: string, body: string, fill: string, titleColor: string, maxLines = 7) {
+      pdf.setFillColor(fill)
+      pdf.roundedRect(x, yPos, width, height, 3, 3, 'F')
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(10)
+      pdf.setTextColor(titleColor)
+      pdf.text(title, x + 5, yPos + 8)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(8)
+      pdf.setTextColor(text)
+      const lines = pdf.splitTextToSize(sanitize(body), width - 10)
+      pdf.text(lines.slice(0, maxLines), x + 5, yPos + 16)
+    }
+
+    function drawTopStat(x: number, yPos: number, width: number, label: string, value: string) {
+      pdf.setDrawColor(border)
+      pdf.setFillColor('#FFFFFF')
+      pdf.roundedRect(x, yPos, width, 22, 3, 3, 'FD')
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(muted)
+      pdf.text(label, x + width / 2, yPos + 8, {
+        align: 'center',
+      })
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(10)
+      pdf.setTextColor(blue)
+
+      const lines = pdf
+        .splitTextToSize(shortText(value, 28), width - 14)
+        .slice(0, 2)
+
+      lines.forEach((line: string, index: number) => {
+        pdf.text(line, x + width / 2, yPos + 16 + index * 5, {
+          align: 'center',
+        })
+      })
+    }
+
+    addHeader()
+
+    let y = 42
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(text)
+    pdf.setFontSize(24)
+    pdf.text('Vergelijkingsrapport', margin, y)
+
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(10)
+    pdf.setTextColor(muted)
+    pdf.text('Professionele vastgoedvergelijking op prijs, EPC, ruimte en ligging.', margin, y + 9)
+
+    y += 22
+
+    const topW = (pageWidth - margin * 2 - 12) / 3
+    drawTopStat(margin, y, topW, 'Aantal woningen', String(properties.length))
+    drawTopStat(margin + topW + 6, y, topW, 'Beste algemene keuze', bestOverall?.title || '-')
+    drawTopStat(margin + (topW + 6) * 2, y, topW, 'Beste prijs per m²', bestPriceM2?.title || '-')
+
+    y += 36
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(15)
+    pdf.setTextColor(text)
+    pdf.text('Overzicht vergelijking', margin, y)
+
+    y += 8
+
+    const tableX = margin
+    const tableW = pageWidth - margin * 2
+    const rowH = 12
+
+    pdf.setFillColor(navy)
+    pdf.roundedRect(tableX, y, tableW, rowH, 3, 3, 'F')
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8)
+    pdf.setTextColor('#FFFFFF')
+    pdf.text('Woning', tableX + 6, y + 8)
+    pdf.text('Prijs', tableX + 72, y + 8, { align: 'center' })
+    pdf.text('Prijs/m²', tableX + 94, y + 8)
+    pdf.text('Opp.', tableX + 124, y + 8)
+    pdf.text('EPC', tableX + 152, y + 8, { align: 'center' })
+    pdf.text('Score', tableX + 164, y + 8)
+
+    properties.slice(0, 6).forEach((property, index) => {
+      const rowY = y + rowH * (index + 1)
+      pdf.setFillColor(index % 2 === 0 ? '#FFFFFF' : soft)
+      pdf.rect(tableX, rowY, tableW, rowH, 'F')
+      pdf.setDrawColor(border)
+      pdf.rect(tableX, rowY, tableW, rowH)
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(8)
+      pdf.setTextColor(text)
+      pdf.text(`${index + 1}. ${shortText(property.title || '-', 28)}`, tableX + 6, rowY + 8)
+      pdf.text(formatPrice(property.price), tableX + 72, rowY + 8, { align: 'center' })
+      pdf.text(pricePerM2(property) ? `€ ${pricePerM2(property)}` : '-', tableX + 94, rowY + 8)
+      pdf.text(`${property.bewoonbare_oppervlakte || '-'} m²`, tableX + 124, rowY + 8)
+      drawTableEpcBadge(tableX + 146, rowY + 1.5, property.epc)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(8)
+      pdf.setTextColor(blue)
+      pdf.text(`${Math.min(99, totalScore(property))}/100`, tableX + 164, rowY + 8)
     })
 
-    pdf.save('slimwoning-smart-vergelijking.pdf')
+    addFooter()
+
+    for (const [index, property] of properties.entries()) {
+      pdf.addPage()
+      addHeader()
+
+      let py = 40
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(22)
+      pdf.setTextColor(text)
+      pdf.text(`${index + 1}. ${shortText(property.title || '-', 52)}`, margin, py)
+
+      py += 8
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(9.5)
+      pdf.setTextColor(blue)
+      pdf.text(shortText(`${property.address || '-'}, ${property.city || '-'}`, 76), margin, py)
+
+      py += 12
+
+      const imageW = 86
+      const imageH = 60
+      const dataUrl = await imageToDataUrl(property.image)
+      if (dataUrl) {
+        const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'
+        pdf.addImage(dataUrl, format, margin, py, imageW, imageH)
+      } else {
+        pdf.setFillColor('#E5E7EB')
+        pdf.roundedRect(margin, py, imageW, imageH, 3, 3, 'F')
+        pdf.setFontSize(9)
+        pdf.setTextColor(muted)
+        pdf.text('Geen afbeelding', margin + imageW / 2, py + 32, { align: 'center' })
+      }
+
+      const panelX = margin + imageW + 8
+      const panelW = pageWidth - margin - panelX
+      pdf.setDrawColor(border)
+      pdf.setFillColor('#FFFFFF')
+      pdf.roundedRect(panelX, py, panelW, imageH, 4, 4, 'FD')
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(8)
+      pdf.setTextColor(muted)
+      pdf.text('Vraagprijs', panelX + 6, py + 10)
+
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(17)
+      pdf.setTextColor(blue)
+      pdf.text(formatPrice(property.price), panelX + 6, py + 24)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7.3)
+      pdf.setTextColor(muted)
+      pdf.text(
+        pricePerM2(property) ? `Prijs per m²: ± € ${pricePerM2(property)}` : 'Prijs per m²: -',
+        panelX + 6,
+        py + 33
+      )
+
+      if (isResidential(property) || property.epc) {
+        drawEpcBadge(panelX + 6, py + 42, property.epc)
+      } else {
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(8)
+        pdf.setTextColor(muted)
+        pdf.text('EPC n.v.t.', panelX + 6, py + 48)
+      }
+
+      drawScoreCircle(panelX + panelW - 45, py + 31, totalScore(property), blue, 'SlimScore')
+      drawScoreCircle(panelX + panelW - 18, py + 31, locationScore(property), green, 'LocatieScore')
+
+      py += 74
+
+      const infoW = (pageWidth - margin * 2 - 12) / 4
+      const residential = isResidential(property)
+
+      drawInfoCell(
+        margin,
+        py,
+        infoW,
+        mainSurfaceLabel(property),
+        `${mainSurface(property) || '-'} m²`
+      )
+      drawInfoCell(
+        margin + infoW + 4,
+        py,
+        infoW,
+        'Slaapkamers',
+        residential ? String(property.slaapkamers || '-') : 'N.v.t.'
+      )
+      drawInfoCell(
+        margin + (infoW + 4) * 2,
+        py,
+        infoW,
+        'Badkamers',
+        residential ? String(property.badkamers || '-') : 'N.v.t.'
+      )
+      drawInfoCell(
+        margin + (infoW + 4) * 3,
+        py,
+        infoW,
+        'Type',
+        property.woning_type || '-'
+      )
+
+      py += 34
+
+      drawTextBox(
+        margin,
+        py,
+        pageWidth - margin * 2,
+        42,
+        'Omgeving',
+        nearbyPdfSummary(freshLocationData[property.id]),
+        lightBlue,
+        blue,
+        4
+      )
+
+      py += 52
+
+      const boxW = (pageWidth - margin * 2 - 6) / 2
+      drawTextBox(
+        margin,
+        py,
+        boxW,
+        68,
+        'Sterke punten',
+        autoPlus(property).join(' • '),
+        lightGreen,
+        green,
+        7
+      )
+
+      drawTextBox(
+        margin + boxW + 6,
+        py,
+        boxW,
+        68,
+        'Aandachtspunten',
+        autoMinus(property).join(' • '),
+        lightRed,
+        red,
+        7
+      )
+
+      py += 80
+
+      pdf.setDrawColor(border)
+      pdf.setFillColor('#FFFFFF')
+      pdf.roundedRect(margin, py, pageWidth - margin * 2, 32, 4, 4, 'FD')
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(11)
+      pdf.setTextColor(text)
+      pdf.text('Samenvatting', margin + 6, py + 9)
+
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(8.3)
+      pdf.setTextColor(muted)
+      const summary = `${property.title || 'Deze woning'} scoort ${Math.min(99, totalScore(property))}/100 algemeen en ${Math.min(99, locationScore(property))}/100 op locatie. De geschatte prijs per m² bedraagt ${pricePerM2(property) ? `€ ${pricePerM2(property)}` : '-'}.`
+      pdf.text(pdf.splitTextToSize(summary, pageWidth - margin * 2 - 12), margin + 6, py + 18)
+
+      addFooter()
+    }
+
+    pdf.save('slimwoning-vergelijkingsrapport.pdf')
   }
 
   if (loading) {
@@ -461,12 +1100,9 @@ function CompareContent() {
       >
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-blue-400">
-              SlimWoning Analyse
-            </p>
 
             <h1 className="text-5xl font-bold">
-              Slimme woningvergelijking
+              Geavanceerde vastgoedanalyse
             </h1>
 
             <p className="mt-4 max-w-3xl text-lg text-gray-400">
@@ -535,7 +1171,13 @@ function CompareContent() {
           }}
         >
           {properties.map((property) => {
-            const analysis = locationData[property.id]
+            const hasCompleteLocation = Boolean(
+              property.address ||
+                property.street ||
+                property.postcode ||
+                (property.latitude && property.longitude)
+            )
+            const analysis = hasCompleteLocation ? locationData[property.id] : null
 
             return (
             <div
@@ -599,18 +1241,29 @@ function CompareContent() {
                     note={pricePerM2(property) ? 'Op basis van vraagprijs' : undefined}
                   />
                   <Stat
-                    label="Ruimte"
-                    value={`${spaceScore(property)}/100`}
+                    label={mainSurfaceLabel(property)}
+                    value={`${mainSurface(property) || '-'} m²`}
+                    note="Werkelijke oppervlakte"
                   />
-                  <Stat
-                    label="Locatie"
-                    value={`${locationScore(property)}/100`}
-                  />
+            <Stat
+              label="Locatie"
+              value={`${locationScore(property)}/100`}
+            />
+            <Stat
+              label="Ruimte score"
+              value={`${spaceScore(property)}/100`}
+            />
+            <Stat
+              label="Voorzieningen"
+              value={`${countNearbyPlaces(locationData[property.id])}/9`}
+            />
                 </div>
 
                 <ScoreBar label="Comfort" score={comfortScore(property)} />
-                <ScoreBar label="Energie" score={epcScore(property)} />
-                <ScoreBar label="Ruimte" score={spaceScore(property)} />
+                {isResidential(property) || property.epc ? (
+                  <ScoreBar label="Energie" score={epcScore(property)} />
+                ) : null}
+                <ScoreBar label="Ruimte score" score={spaceScore(property)} />
                 <ScoreBar label="Locatie" score={locationScore(property)} />
 
                 <div className="mt-6 flex flex-1 flex-col space-y-4">
@@ -624,7 +1277,10 @@ function CompareContent() {
                     value={autoMinus(property).join(' • ')}
                   />
 
-                  <NearbyPlaces analysis={analysis} />
+                  <NearbyPlaces
+                    analysis={analysis}
+                    hasCompleteLocation={hasCompleteLocation}
+                  />
 
                   <div
                     className="rounded-2xl !bg-white p-4 shadow-sm ring-1 ring-gray-100"
@@ -684,6 +1340,7 @@ function CompareContent() {
             het beste.
           </p>
         </section>
+
       </div>
     </div>
   )
@@ -737,19 +1394,38 @@ function Stat({
   label,
   value,
   note,
+  sideLabel,
+  sideValue,
 }: {
   label: string
   value: string
   note?: string
+  sideLabel?: string
+  sideValue?: string
 }) {
   return (
     <div
       className="rounded-2xl !bg-white p-4 shadow-sm ring-1 ring-gray-100"
       style={{ background: '#ffffff' }}
     >
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-xl font-bold text-[#111827]">{value}</p>
-      {note && <p className="mt-1 text-xs font-semibold text-gray-500">{note}</p>}
+      <div className="flex min-h-[92px] flex-col gap-3">
+        <div>
+          <p className="text-sm text-gray-500">{label}</p>
+          <p className="mt-2 text-xl font-bold text-[#111827]">{value}</p>
+          {note && <p className="mt-1 text-xs font-semibold text-gray-500">{note}</p>}
+        </div>
+
+        {sideValue && (
+          <div className="rounded-2xl bg-blue-50 px-3 py-3 text-center">
+            {sideLabel && (
+              <p className="text-[10px] font-bold uppercase tracking-wide text-blue-500">
+                {sideLabel}
+              </p>
+            )}
+            <p className="mt-2 text-lg font-black text-blue-700">{sideValue}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -783,7 +1459,27 @@ function Badge({
     </span>
   )
 }
-function NearbyPlaces({ analysis }: { analysis: any }) {
+function NearbyPlaces({
+  analysis,
+  hasCompleteLocation,
+}: {
+  analysis: any
+  hasCompleteLocation: boolean
+}) {
+  if (!hasCompleteLocation) {
+    return (
+      <div
+        className="rounded-2xl !bg-white p-4 shadow-sm ring-1 ring-gray-100"
+        style={{ background: '#ffffff' }}
+      >
+        <p className="text-sm text-gray-500">Omgeving</p>
+        <p className="mt-2 text-sm leading-7 text-gray-700">
+          Geen volledig adres beschikbaar.
+        </p>
+      </div>
+    )
+  }
+
   if (!analysis) {
     return (
       <div

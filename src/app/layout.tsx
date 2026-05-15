@@ -1,17 +1,39 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: 'SlimWoning',
-  description: 'Slim vastgoed platform',
-}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    supabase.auth.getSession().then(({ data }) => {
+      setLoggedIn(!!data.session)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(!!session)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   return (
     <html lang="nl">
       <body className="bg-[#f6f8fb] text-[#111827]">
@@ -43,15 +65,31 @@ export default function RootLayout({
             </nav>
 
             <nav className="flex items-center gap-8 text-[18px] font-semibold tracking-[-0.01em]">
-              <Link href="/login" className="flex items-center gap-2 transition hover:opacity-80">
+              <Link
+                href={loggedIn ? '/favorites' : '/login'}
+                className="flex items-center gap-2 transition hover:opacity-80"
+              >
                 <span className="text-2xl leading-none">♡</span>
                 <span>Favorieten</span>
               </Link>
 
-              <Link href="/login" className="flex items-center gap-2 transition hover:opacity-80">
-                <span className="text-2xl leading-none">◎</span>
-                <span>Inloggen</span>
-              </Link>
+              {loggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 transition hover:opacity-80"
+                >
+                  <span className="text-2xl leading-none">◎</span>
+                  <span>Dashboard</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 transition hover:opacity-80"
+                >
+                  <span className="text-2xl leading-none">◎</span>
+                  <span>Inloggen</span>
+                </Link>
+              )}
             </nav>
           </div>
         </header>
