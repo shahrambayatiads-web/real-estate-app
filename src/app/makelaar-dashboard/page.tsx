@@ -1,10 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function MakelaarDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F6F8FC] px-6 py-12 text-[#071B4D] md:px-10">
+          <div className="mx-auto max-w-7xl rounded-[2.5rem] bg-white p-10 shadow-2xl">
+            <p className="text-lg font-bold text-gray-500">Dashboard laden...</p>
+          </div>
+        </main>
+      }
+    >
+      <MakelaarDashboardContent />
+    </Suspense>
+  )
+}
+
+function MakelaarDashboardContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const selectedPlan = searchParams.get('plan') || 'pro'
