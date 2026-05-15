@@ -1,8 +1,17 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
+      <PremiumContent />
+    </Suspense>
+  )
+}
+
+function PremiumContent() {
   const searchParams = useSearchParams()
   const plan = searchParams.get('plan') || 'pro'
 
