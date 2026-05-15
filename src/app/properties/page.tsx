@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+
 import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from '@react-google-maps/api'
+
+const googleMapsLibraries: ('places')[] = ['places']
 
 export default function PropertiesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [properties, setProperties] = useState<any[]>([])
   const [favoriteIds, setFavoriteIds] = useState<number[]>([])
@@ -21,7 +25,9 @@ export default function PropertiesPage() {
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
 
   const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: googleMapsLibraries,
   })
 
   const mapContainerStyle = {
@@ -68,6 +74,10 @@ export default function PropertiesPage() {
   useEffect(() => {
     checkUser()
     getProperties()
+
+    setSearch(searchParams.get('search') || '')
+    setCity(searchParams.get('city') || '')
+    setMaxPrice(searchParams.get('maxPrice') || '')
   }, [])
 
   async function checkUser() {
@@ -200,14 +210,35 @@ export default function PropertiesPage() {
   }
 
   const filteredProperties = properties.filter((property) => {
+    const searchableText = [
+      property.title,
+      property.city,
+      property.address,
+      property.postcode,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    const searchWords = search
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.trim())
+      .filter((word) => word.length > 1)
+
+    const cityWords = city
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.trim())
+      .filter((word) => word.length > 1)
+
     const matchesSearch =
-      property.title?.toLowerCase().includes(search.toLowerCase()) ||
-      property.city?.toLowerCase().includes(search.toLowerCase()) ||
-      property.address?.toLowerCase().includes(search.toLowerCase())
+      searchWords.length === 0 ||
+      searchWords.some((word) => searchableText.includes(word))
 
     const matchesCity =
-      city === '' ||
-      property.city?.toLowerCase().includes(city.toLowerCase())
+      cityWords.length === 0 ||
+      cityWords.some((word) => searchableText.includes(word))
 
     const matchesPrice =
       maxPrice === '' ||
@@ -263,16 +294,13 @@ export default function PropertiesPage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-blue-700">
-              SlimWoning
-            </p>
 
             <h1 className="text-4xl font-bold md:text-5xl">
-              Woningen vergelijken
+              Te koop
             </h1>
 
             <p className="mt-3 max-w-2xl text-gray-600">
-              Bekijk woningen op kaart, vergelijk kenmerken en maak een professioneel PDF rapport.
+              Bekijk panden te koop, filter op locatie en vergelijk eenvoudig.
             </p>
 
             {userEmail && (
@@ -283,19 +311,30 @@ export default function PropertiesPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/add-property"
-              className="rounded-2xl bg-blue-700 px-5 py-3 text-center font-bold text-white shadow-sm transition hover:bg-blue-800"
-            >
-              Woning toevoegen
-            </Link>
+            {userId ? (
+              <>
+                <Link
+                  href="/add-property"
+                  className="rounded-2xl bg-blue-700 px-5 py-3 text-center font-bold text-white shadow-sm transition hover:bg-blue-800"
+                >
+                  Woning toevoegen
+                </Link>
 
-            <button
-              onClick={handleLogout}
-              className="rounded-2xl border border-gray-200 bg-white px-5 py-3 font-bold text-[#111827] shadow-sm"
-            >
-              Uitloggen
-            </button>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-2xl border border-gray-200 bg-white px-5 py-3 font-bold text-[#111827] shadow-sm"
+                >
+                  Uitloggen
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-2xl bg-blue-700 px-5 py-3 text-center font-bold text-white shadow-sm transition hover:bg-blue-800"
+              >
+                Inloggen
+              </Link>
+            )}
           </div>
         </div>
 
@@ -366,7 +405,6 @@ export default function PropertiesPage() {
                       fontSize: '22px',
                       fontWeight: '900',
                     }}
-                    optimized={false}
                     zIndex={999}
                     onClick={() => setSelectedMapProperty(property)}
                   />
@@ -448,11 +486,16 @@ export default function PropertiesPage() {
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
 
+                  <BrokerLogoBadge property={property} />
+
                   <button
                     onClick={() => toggleFavorite(Number(property.id))}
-                    className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow"
+                    aria-label={isFavorite ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten'}
+                    className="absolute right-4 top-4 z-10 flex items-center justify-center text-4xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)] transition hover:scale-110"
                   >
-                    {isFavorite ? '❤️' : '🤍'}
+                    <span className={isFavorite ? 'text-red-500' : 'text-white'}>
+                      {isFavorite ? '♥' : '♡'}
+                    </span>
                   </button>
                 </div>
 
@@ -478,10 +521,11 @@ export default function PropertiesPage() {
                       : property.city}
                   </p>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
                     <Badge text={`${property.slaapkamers || '-'} slp.`} />
                     <Badge text={`${property.badkamers || '-'} badk.`} />
                     <Badge text={`${property.bewoonbare_oppervlakte || '-'} m²`} />
+                    <EpcBadge value={property.epc} />
                   </div>
 
                   <div className="mt-6 grid grid-cols-2 gap-3">
@@ -546,5 +590,71 @@ function Badge({ text }: { text: string }) {
     <span className="rounded-full bg-[#eef2ff] px-4 py-2 text-sm font-semibold text-blue-700">
       {text}
     </span>
+  )
+}
+
+function EpcBadge({ value }: { value: any }) {
+  const epc = String(value || '').trim().toUpperCase()
+
+  if (!epc) return null
+
+  const colorClass =
+    epc === 'A+'
+      ? 'bg-green-700'
+      : epc === 'A'
+        ? 'bg-green-600'
+        : epc === 'B'
+          ? 'bg-lime-500'
+          : epc === 'C'
+            ? 'bg-yellow-400'
+            : epc === 'D'
+              ? 'bg-orange-400'
+              : epc === 'E'
+                ? 'bg-orange-500'
+                : 'bg-red-600'
+
+  return (
+    <span className="inline-flex items-center overflow-hidden rounded-md text-xs font-black text-white shadow-sm">
+      <span className="bg-[#0B1F4D] px-2 py-1 text-[10px] uppercase tracking-[0.12em]">
+        EPC
+      </span>
+      <span
+        className={`${colorClass} relative px-2.5 py-1 after:absolute after:right-[-6px] after:top-0 after:h-full after:w-3 after:skew-x-[-20deg] after:bg-inherit`}
+      >
+        {epc}
+      </span>
+    </span>
+  )
+}
+
+
+function BrokerLogoBadge({ property }: { property: any }) {
+  const logo =
+    property.makelaar_logo ||
+    property.broker_logo ||
+    property.agent_logo ||
+    property.logo_url
+
+  if (!logo) return null
+
+  const isPremium =
+    property.premium_partner === true ||
+    property.is_premium_partner === true ||
+    property.partner_type === 'premium'
+
+  return (
+    <div className="absolute bottom-4 right-4 z-10 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+      {isPremium && (
+        <div className="bg-sky-500 px-3 py-1 text-center text-[11px] font-black text-white">
+          Premium partner
+        </div>
+      )}
+
+      <img
+        src={logo}
+        alt="Makelaar logo"
+        className="max-h-14 max-w-[130px] object-contain px-3 py-2"
+      />
+    </div>
   )
 }
