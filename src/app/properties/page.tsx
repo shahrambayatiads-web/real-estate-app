@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -10,6 +10,22 @@ import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from '@react-google-map
 const googleMapsLibraries: ('places')[] = ['places']
 
 export default function PropertiesPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#F6F8FC] px-6 py-12 text-[#071B4D] md:px-10">
+          <div className="mx-auto max-w-7xl rounded-[2.5rem] bg-white p-10 shadow-2xl">
+            <p className="text-lg font-bold text-gray-500">Woningen laden...</p>
+          </div>
+        </main>
+      }
+    >
+      <PropertiesContent />
+    </Suspense>
+  )
+}
+
+function PropertiesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
