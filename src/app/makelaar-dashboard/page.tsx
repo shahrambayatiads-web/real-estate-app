@@ -8,9 +8,9 @@ export default function MakelaarDashboardPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#F6F8FC] px-6 py-12 text-[#071B4D] md:px-10">
-          <div className="mx-auto max-w-7xl rounded-[2.5rem] bg-white p-10 shadow-2xl">
-            <p className="text-lg font-bold text-gray-500">Dashboard laden...</p>
+        <main className="min-h-screen bg-[#F6F8FC] px-4 py-8 text-[#071B4D] md:px-8">
+          <div className="mx-auto max-w-7xl rounded-[2rem] bg-white p-6 shadow-xl">
+            <p className="text-base font-bold text-gray-500">Dashboard laden...</p>
           </div>
         </main>
       }
@@ -290,7 +290,7 @@ function MakelaarDashboardContent() {
   ).length
 
   return (
-    <main className="min-h-screen bg-[#F6F8FC] px-6 py-12 text-[#071B4D] md:px-10">
+    <main className="min-h-screen bg-[#F6F8FC] px-4 py-8 text-[#071B4D] md:px-8">
       <div className="mx-auto max-w-7xl">
         {paymentSuccess && (
           <div className="mb-10 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800">
@@ -310,15 +310,15 @@ function MakelaarDashboardContent() {
           </div>
         )}
 
-        <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.28em] text-blue-700">
               SlimWoning Pro
             </p>
-            <h1 className="mt-3 text-5xl font-black tracking-[-0.04em] md:text-6xl">
+            <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] md:text-5xl">
               Makelaar Dashboard
             </h1>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-gray-500">
+            <p className="mt-3 max-w-3xl text-base leading-7 text-gray-500">
               Bekijk nieuwe verkoopaanvragen van eigenaars in jouw regio en reageer als vastgoedmakelaar.
             </p>
           </div>
@@ -327,7 +327,7 @@ function MakelaarDashboardContent() {
             <button
               type="button"
               onClick={() => (window.location.href = '/makelaar-profiel')}
-              className="rounded-2xl border border-[#DCE7F7] bg-white px-7 py-4 text-sm font-black text-[#071B4D] shadow-xl transition hover:bg-[#F1F5FF]"
+              className="rounded-2xl border border-[#DCE7F7] bg-white px-6 py-3 text-sm font-black text-[#071B4D] shadow-lg transition hover:bg-[#F1F5FF]"
             >
               Mijn profiel bewerken
             </button>
@@ -335,14 +335,14 @@ function MakelaarDashboardContent() {
             <button
               type="button"
               onClick={() => (window.location.href = '/')}
-              className="rounded-2xl bg-[#071B4D] px-7 py-4 text-sm font-black text-white shadow-xl transition hover:scale-[1.02]"
+              className="rounded-2xl bg-[#071B4D] px-6 py-3 text-sm font-black text-white shadow-lg transition hover:scale-[1.02]"
             >
               Terug naar website
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatCard
             title="Nieuwe leads"
             value={newLeads}
@@ -363,21 +363,21 @@ function MakelaarDashboardContent() {
           />
         </div>
 
-        <section className="mt-10 rounded-[2.5rem] bg-white p-8 shadow-2xl">
+        <section className="mt-8 rounded-[2rem] bg-white p-6 shadow-xl">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.24em] text-blue-700">
                 Jouw abonnement
               </p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.03em]">
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">
                 {activePlan.charAt(0).toUpperCase() + activePlan.slice(1)} plan actief
               </h2>
-              <p className="mt-3 max-w-3xl text-base leading-8 text-gray-500">
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-gray-500">
                 Je hebt toegang tot priority matching, je verkoopaanpak en premium lead credits.
               </p>
             </div>
 
-            <div className="rounded-2xl bg-[#071B4D] px-6 py-4 text-sm font-black text-white">
+            <div className="rounded-2xl bg-[#071B4D] px-5 py-3 text-sm font-black text-white">
               {premiumCredits} premium {premiumCredits === 1 ? 'credit' : 'credits'} beschikbaar
             </div>
             {(planMessage || pendingPlan) && (
@@ -387,7 +387,7 @@ function MakelaarDashboardContent() {
             )}
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
             <PlanCard
               title="Starter"
               price="€29/maand"
@@ -439,14 +439,14 @@ function MakelaarDashboardContent() {
           </div>
         </section>
 
-        <div className="mt-10 space-y-8">
+        <div className="mt-8 space-y-8">
           {loading ? (
-            <div className="rounded-[2.5rem] bg-white p-10 shadow-2xl">
-              <p className="text-lg font-bold text-gray-500">Leads laden...</p>
+            <div className="rounded-[2rem] bg-white p-6 shadow-xl">
+              <p className="text-base font-bold text-gray-500">Leads laden...</p>
             </div>
           ) : leads.length === 0 ? (
-            <div className="rounded-[2.5rem] bg-white p-10 shadow-2xl">
-              <p className="text-lg font-bold text-gray-500">Nog geen leads beschikbaar.</p>
+            <div className="rounded-[2rem] bg-white p-6 shadow-xl">
+              <p className="text-base font-bold text-gray-500">Nog geen leads beschikbaar.</p>
             </div>
           ) : (
             leads.map((lead: any) => {
@@ -457,14 +457,14 @@ function MakelaarDashboardContent() {
               return (
                 <section
                   key={lead.id}
-                  className="rounded-[2.5rem] bg-white p-8 shadow-2xl"
+                  className="rounded-[2rem] bg-white p-6 shadow-xl"
                 >
                   <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-sm font-black uppercase tracking-[0.24em] text-blue-700">
                         Nieuwe aanvraag
                       </p>
-                      <h2 className="mt-3 text-3xl font-black tracking-[-0.03em] md:text-4xl">
+                      <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] md:text-3xl">
                         Verkoopaanvraag in {lead.city || 'België'}
                       </h2>
                     </div>
@@ -472,7 +472,7 @@ function MakelaarDashboardContent() {
                     <StatusBadge status={lead.status} />
                   </div>
 
-                  <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-4">
+                  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
                     <InfoCard label="Voorkeur" value={lead.preferences?.[0] || 'Lokale makelaar'} />
                     <InfoCard
                       label="Status"
@@ -485,11 +485,11 @@ function MakelaarDashboardContent() {
                     <InfoCard label="Regio" value={lead.city || 'Gent'} />
                   </div>
 
-                  <div className="mt-8 rounded-[2rem] border border-[#DCE7F7] bg-[#F8FBFF] p-6">
-                    <p className="text-lg font-black">
+                  <div className="mt-6 rounded-[1.5rem] border border-[#DCE7F7] bg-[#F8FBFF] p-5">
+                    <p className="text-base font-black">
                       Nieuwe eigenaar zoekt een makelaar in deze regio.
                     </p>
-                    <p className="mt-3 max-w-3xl text-base leading-8 text-gray-500">
+                    <p className="mt-2 max-w-3xl text-sm leading-7 text-gray-500">
                       {(isClaimed || isPremium)
                         ? 'Contactgegevens zijn beschikbaar voor deze lead.'
                         : 'Contactgegevens blijven verborgen tot deze lead geclaimd wordt via SlimWoning.'}
@@ -638,12 +638,12 @@ function StatCard({
         : 'text-blue-700'
 
   return (
-    <div className="rounded-[2rem] bg-white p-7 shadow-xl">
+    <div className="rounded-[1.75rem] bg-white p-6 shadow-lg">
       <p className={`text-sm font-black uppercase tracking-[0.24em] ${toneClass}`}>
         {title}
       </p>
-      <p className="mt-4 text-5xl font-black">{value}</p>
-      <p className="mt-3 text-base leading-7 text-gray-500">{description}</p>
+      <p className="mt-3 text-4xl font-black">{value}</p>
+      <p className="mt-2 text-base leading-7 text-gray-500">{description}</p>
     </div>
   )
 }
@@ -669,9 +669,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.5rem] bg-[#F8FAFC] p-5">
+    <div className="rounded-[1.25rem] bg-[#F8FAFC] p-4">
       <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-3 text-xl font-black">{value}</p>
+      <p className="mt-2 text-lg font-black">{value}</p>
     </div>
   )
 }
@@ -712,7 +712,7 @@ function PlanCard({
 }) {
   return (
     <div
-      className={`flex h-full flex-col rounded-[2rem] border p-6 ${
+      className={`flex h-full flex-col rounded-[1.5rem] border p-5 ${
         active
           ? 'border-blue-200 bg-blue-50'
           : 'border-[#DCE7F7] bg-[#F8FAFC]'
@@ -726,13 +726,13 @@ function PlanCard({
           </span>
         )}
       </div>
-      <p className="mt-4 text-3xl font-black text-[#071B4D]">{price}</p>
-      <p className="mt-3 text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+      <p className="mt-3 text-2xl font-black text-[#071B4D]">{price}</p>
+      <p className="mt-2 text-sm font-black uppercase tracking-[0.18em] text-blue-700">
         {credits}
       </p>
-      <p className="mt-4 text-sm leading-7 text-gray-600">{description}</p>
+      <p className="mt-3 text-sm leading-6 text-gray-600">{description}</p>
 
-      <ul className="mt-5 flex-1 space-y-3">
+      <ul className="mt-4 flex-1 space-y-2">
         {benefits.map((benefit) => (
           <li key={benefit} className="flex gap-3 text-sm font-bold text-[#071B4D]">
             <span className="mt-1 h-2 w-2 rounded-full bg-blue-700" />
@@ -751,7 +751,7 @@ function PlanCard({
             console.log('Plan button clicked')
             onSelect?.()
           }}
-          className={`mt-6 w-full rounded-2xl px-5 py-4 text-sm font-black text-white transition ${
+          className={`mt-5 w-full rounded-2xl px-5 py-3 text-sm font-black text-white transition ${
             active || pending || disabled
               ? 'cursor-not-allowed bg-gray-400'
               : 'cursor-pointer bg-[#071B4D] hover:scale-[1.02]'
