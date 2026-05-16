@@ -334,13 +334,13 @@ export default function HomePage() {
         <div className="absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-sky-400/10 blur-3xl" />
         <div className="absolute bottom-[-10rem] right-1/4 h-[24rem] w-[24rem] rounded-full bg-slate-300/20 blur-3xl" />
 
-        <div className="relative mx-auto max-w-4xl">
-          <div className="grid min-h-[340px] grid-cols-1 items-center gap-6 lg:grid-cols-[0.82fr_0.9fr] xl:gap-8">
+        <div className="relative mx-auto max-w-3xl">
+          <div className="grid min-h-[300px] grid-cols-1 items-center gap-5 lg:grid-cols-[0.8fr_0.85fr] xl:gap-6">
             <div className="relative pt-2">
-              <div className="w-full max-w-md">
+              <div className="w-full max-w-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <h1 className="mt-1 max-w-md text-2xl font-black tracking-[-0.04em] text-[#0B1F4D] md:text-3xl">
+                    <h1 className="mt-1 max-w-sm text-xl font-black tracking-[-0.04em] text-[#0B1F4D] md:text-2xl">
                       Vergelijk woningen zonder gedoe.
                     </h1>
                   </div>
@@ -349,7 +349,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="rounded-xl bg-transparent p-0">
-                  <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.12em] text-gray-400">
+                  <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] text-gray-400">
                     <span className="text-blue-700">1 Selecteer</span>
                     <span>→</span>
                     <span className="text-blue-700">2 Vergelijk</span>
@@ -358,22 +358,22 @@ export default function HomePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-                      <div className="h-20 overflow-hidden bg-blue-50">
+                      <div className="h-16 overflow-hidden bg-blue-50">
                         <img
                           src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=900&q=80"
                           alt="Woning A"
                           className="h-full w-full object-cover"
                         />
                       </div>
-                      <div className="p-2.5">
-                        <p className="text-xs font-bold text-gray-500">Woning A</p>
-                        <p className="mt-1 text-sm font-black text-[#0B1F4D]">€ 450.000</p>
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500">
+                      <div className="p-2">
+                        <p className="text-[10px] font-bold text-gray-500">Woning A</p>
+                        <p className="mt-1 text-xs font-black text-[#0B1F4D]">€ 450.000</p>
+                        <div className="mt-1.5 grid grid-cols-2 gap-2 text-[9px] font-bold text-gray-500">
                           <span>EPC B</span>
                           <span>120 m²</span>
                         </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-gray-200">
-                          <div className="h-1.5 w-[72%] rounded-full bg-blue-500" />
+                        <div className="mt-1.5 h-1 rounded-full bg-gray-200">
+                          <div className="h-1 w-[72%] rounded-full bg-blue-500" />
                         </div>
                       </div>
                     </div>
@@ -381,45 +381,45 @@ export default function HomePage() {
                       <div className="absolute right-3 top-3 z-10 rounded-full bg-blue-700 px-2 py-1 text-[10px] font-black text-white">
                         Beste
                       </div>
-                      <div className="h-20 overflow-hidden bg-blue-50">
+                      <div className="h-16 overflow-hidden bg-blue-50">
                         <img
                           src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80"
                           alt="Woning B"
                           className="h-full w-full object-cover"
                         />
                       </div>
-                      <div className="p-2.5">
-                        <p className="text-xs font-bold text-gray-500">Woning B</p>
-                        <p className="mt-1 text-sm font-black text-[#0B1F4D]">€ 420.000</p>
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500">
+                      <div className="p-2">
+                        <p className="text-[10px] font-bold text-gray-500">Woning B</p>
+                        <p className="mt-1 text-xs font-black text-[#0B1F4D]">€ 420.000</p>
+                        <div className="mt-1.5 grid grid-cols-2 gap-2 text-[9px] font-bold text-gray-500">
                           <span>EPC A</span>
                           <span>135 m²</span>
                         </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-gray-200">
-                          <div className="demo-progress h-1.5 rounded-full bg-blue-700" />
+                        <div className="mt-1.5 h-1 rounded-full bg-gray-200">
+                          <div className="demo-progress h-1 rounded-full bg-blue-700" />
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 rounded-lg border border-blue-100 bg-white/55 p-2.5">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+                  <div className="mt-2 rounded-lg border border-blue-100 bg-white/55 p-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
                       AI conclusie
                     </p>
-                    <p className="mt-1 text-xs font-bold leading-5 text-[#0B1F4D]">
+                    <p className="mt-1 text-[11px] font-bold leading-4 text-[#0B1F4D]">
                       Woning B scoort beter op prijs, EPC en locatie. PDF rapport klaar.
                     </p>
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/45 px-3 py-2 ring-1 ring-white/70">
-                  <button className="demo-play flex h-7 w-7 items-center justify-center rounded-full bg-blue-700 text-[10px] text-white shadow-lg shadow-blue-700/20">
+                <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/45 px-2.5 py-1.5 ring-1 ring-white/70">
+                  <button className="demo-play flex h-6 w-6 items-center justify-center rounded-full bg-blue-700 text-[9px] text-white shadow-lg shadow-blue-700/20">
                     ▶
                   </button>
                   <div className="flex-1">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
-                      <div className="demo-progress h-1.5 rounded-full bg-blue-700" />
+                    <div className="h-1 overflow-hidden rounded-full bg-gray-200">
+                      <div className="demo-progress h-1 rounded-full bg-blue-700" />
                     </div>
                   </div>
-                  <p className="text-xs font-bold text-gray-500">
+                  <p className="text-[10px] font-bold text-gray-500">
                     0:18
                   </p>
                 </div>
@@ -429,18 +429,18 @@ export default function HomePage() {
             <div className="relative flex items-center justify-center lg:justify-end">
               <div className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-blue-600/8 via-sky-400/8 to-slate-200/20 blur-2xl" />
 
-              <div className="relative mt-1 ml-auto w-full max-w-sm rounded-xl border border-white/80 bg-white/80 p-3 shadow-md shadow-blue-900/5 backdrop-blur-sm md:p-4">
-                <div className="mb-3 flex items-center gap-3 border-b border-gray-200">
-                  <button className="relative pb-3 text-sm font-extrabold text-blue-700">
+              <div className="relative mt-1 ml-auto w-full max-w-xs rounded-xl border border-white/80 bg-white/80 p-2.5 shadow-md shadow-blue-900/5 backdrop-blur-sm md:p-3">
+                <div className="mb-2 flex items-center gap-3 border-b border-gray-200">
+                  <button className="relative pb-3 text-xs font-extrabold text-blue-700">
                     Te koop
                     <span className="absolute bottom-[-1px] left-0 h-1 w-full rounded-full bg-blue-700" />
                   </button>
-                  <button className="pb-3 text-sm font-bold text-gray-500">
+                  <button className="pb-3 text-xs font-bold text-gray-500">
                     Te huur
                   </button>
                 </div>
-                <div className="mb-4">
-                  <label className="mb-2 block text-xs font-bold text-gray-700">
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-[11px] font-bold text-gray-700">
                     Voeg een locatie toe
                   </label>
                   <div className="relative">
@@ -453,7 +453,7 @@ export default function HomePage() {
                         }
                       }}
                       placeholder="Gemeente of postcode"
-                      className="w-full rounded-lg border border-gray-200 bg-[#f8fafc] px-3 py-2 pr-9 text-xs font-medium outline-none transition focus:border-blue-600 focus:bg-white"
+                      className="w-full rounded-lg border border-gray-200 bg-[#f8fafc] px-2.5 py-1.5 pr-8 text-[11px] font-medium outline-none transition focus:border-blue-600 focus:bg-white"
                     />
                     <button
                       type="button"
@@ -487,9 +487,9 @@ export default function HomePage() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-xs font-bold text-gray-700">
+                    <label className="mb-1.5 block text-[11px] font-bold text-gray-700">
                       Type vastgoed
                     </label>
                     <div className="relative">
@@ -503,7 +503,7 @@ export default function HomePage() {
                             setBedrooms(0)
                           }
                         }}
-                        className="h-9 w-full appearance-none rounded-lg border border-blue-600 bg-white px-3 pr-9 text-xs font-semibold leading-none text-blue-700 outline-none"
+                        className="h-8 w-full appearance-none rounded-lg border border-blue-600 bg-white px-2.5 pr-8 text-[11px] font-semibold leading-none text-blue-700 outline-none"
                       >
                         <option>Selecteer...</option>
                         <option>Huis</option>
@@ -529,7 +529,7 @@ export default function HomePage() {
                   </div>
 
                   <div className={bedroomsDisabled ? 'opacity-40' : ''}>
-                    <label className="mb-2 block text-xs font-bold text-gray-700">
+                    <label className="mb-1.5 block text-[11px] font-bold text-gray-700">
                       Minimum aantal slaapkamers
                     </label>
 
@@ -538,18 +538,18 @@ export default function HomePage() {
                         type="button"
                         disabled={bedroomsDisabled}
                         onClick={() => setBedrooms((value) => Math.max(0, value - 1))}
-                        className="flex h-9 w-9 items-center justify-center bg-gray-100 text-base font-black text-gray-500 transition hover:bg-gray-200"
+                        className="flex h-8 w-8 items-center justify-center bg-gray-100 text-sm font-black text-gray-500 transition hover:bg-gray-200"
                       >
                         -
                       </button>
-                      <div className="flex-1 text-center text-base font-black text-blue-700">
+                      <div className="flex-1 text-center text-sm font-black text-blue-700">
                         {bedrooms}
                       </div>
                       <button
                         type="button"
                         disabled={bedroomsDisabled}
                         onClick={() => setBedrooms((value) => value + 1)}
-                        className="flex h-9 w-9 items-center justify-center border-l border-blue-600 bg-white text-base font-black text-blue-700 transition hover:bg-blue-50"
+                        className="flex h-8 w-8 items-center justify-center border-l border-blue-600 bg-white text-sm font-black text-blue-700 transition hover:bg-blue-50"
                       >
                         +
                       </button>
@@ -561,31 +561,31 @@ export default function HomePage() {
                     )}
                   </div>
                   <div>
-                    <label className="mb-2 block text-xs font-bold text-gray-700">
+                    <label className="mb-1.5 block text-[11px] font-bold text-gray-700">
                       Minimum
                     </label>
                     <input
                       type="number"
                       value={minPrice}
                       onChange={(event) => setMinPrice(event.target.value)}
-                      className="w-full rounded-lg border border-blue-600 bg-white px-3 py-2 text-xs font-semibold text-blue-700 outline-none"
+                      className="w-full rounded-lg border border-blue-600 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 outline-none"
                       placeholder="€ 0"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-xs font-bold text-gray-700">
+                    <label className="mb-1.5 block text-[11px] font-bold text-gray-700">
                       Maximum
                     </label>
                     <input
                       type="number"
                       value={maxPrice}
                       onChange={(event) => setMaxPrice(event.target.value)}
-                      className="w-full rounded-lg border border-blue-600 bg-white px-3 py-2 text-xs font-semibold text-blue-700 outline-none"
+                      className="w-full rounded-lg border border-blue-600 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 outline-none"
                       placeholder="€ 0"
                     />
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-2 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => {
@@ -607,13 +607,13 @@ export default function HomePage() {
                       maxPrice,
                     },
                   }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-xs font-extrabold text-white shadow-md shadow-blue-700/15 transition hover:bg-blue-800"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-3 py-2 text-[11px] font-extrabold text-white shadow-md shadow-blue-700/15 transition hover:bg-blue-800"
                 >
                   <span className="text-lg">⌕</span>
                   Zoeken
                 </Link>
-                <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50/50 p-2.5 shadow-sm shadow-blue-900/5">
-                  <p className="text-xs font-black text-[#0B1F4D]">
+                <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50/50 p-2 shadow-sm shadow-blue-900/5">
+                  <p className="text-[11px] font-black text-[#0B1F4D]">
                     Ontvang nieuwe panden per e-mail
                   </p>
                   <p className="mt-1 text-xs text-gray-600">
@@ -628,13 +628,13 @@ export default function HomePage() {
                         setSearchAlertSaved(false)
                       }}
                       placeholder="E-mailadres"
-                      className="h-9 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-xs font-medium outline-none transition focus:border-blue-600"
+                      className="h-8 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 text-[11px] font-medium outline-none transition focus:border-blue-600"
                     />
                     <button
                       type="button"
                       onClick={saveSearchAlert}
                       disabled={savingAlert}
-                      className="rounded-lg bg-blue-700 px-3 text-xs font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-lg bg-blue-700 px-2.5 text-[11px] font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {savingAlert ? 'Opslaan...' : 'Bewaar'}
                     </button>
