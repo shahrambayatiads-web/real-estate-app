@@ -142,9 +142,10 @@ function MakelaarDashboardContent() {
 
   async function saveSubscription(plan: string) {
     const config = getPlanConfig(plan)
+    const makelaarEmail = makelaarProfile?.email || 'demo@slimwoning.be'
 
     const payload = {
-      makelaar_email: makelaarProfile?.email || 'demo@slimwoning.be',
+      makelaar_email: makelaarEmail,
       plan,
       premium_credits: config.credits,
       homepage_days: config.homepageDays,
@@ -154,11 +155,30 @@ function MakelaarDashboardContent() {
       cancel_at_period_end: false,
     }
 
-    if (subscription?.id) {
+    let existingSubscription = subscription
+
+    if (!existingSubscription?.id) {
+      const { data: foundSubscription, error: findError } = await supabase
+        .from('makelaar_subscriptions')
+        .select('*')
+        .eq('makelaar_email', makelaarEmail)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (findError) {
+        console.error('Subscription lookup failed:', findError)
+        return null
+      }
+
+      existingSubscription = foundSubscription
+    }
+
+    if (existingSubscription?.id) {
       const { data, error } = await supabase
         .from('makelaar_subscriptions')
         .update(payload)
-        .eq('id', subscription.id)
+        .eq('id', existingSubscription.id)
         .select()
         .single()
 
